@@ -76,7 +76,8 @@ export default function ChatView() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    // PCのみ: Ctrl+Enter or Cmd+Enter で送信（スマホではボタンのみ）
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       sendMessage();
     }

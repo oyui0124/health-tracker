@@ -225,18 +225,13 @@ export async function POST(req: NextRequest) {
     const db = getSupabase();
     const { message } = await req.json();
 
-    // チャット履歴を保存
-    await db
-      .from("chat_messages")
-      .insert({ role: "user", content: message });
-
     // コンテキスト情報を取得
     const [todaySummary, recentHistory] = await Promise.all([
       getTodaysSummary(),
       getRecentHistory(),
     ]);
 
-    // 直近のチャット履歴を取得
+    // 直近のチャット履歴を取得（今回のメッセージ保存前）
     const { data: chatHistory } = await db
       .from("chat_messages")
       .select("role, content")
@@ -273,11 +268,14 @@ export async function POST(req: NextRequest) {
       await saveEntries(parsed);
     }
 
-    // アシスタントメッセージを保存
+    // ユーザーメッセージとアシスタントメッセージを保存
     const cleanMessage = assistantMessage
       .replace(/```json[\s\S]*?```\n?/g, "")
       .trim();
 
+    await db
+      .from("chat_messages")
+      .insert({ role: "user", content: message });
     await db
       .from("chat_messages")
       .insert({ role: "assistant", content: cleanMessage });
