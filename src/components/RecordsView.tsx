@@ -55,7 +55,7 @@ function getLocalDate(d: Date = new Date()): string {
   return `${y}-${m}-${day}`;
 }
 
-function getDetailedAdvice(
+function getAdviceForDate(
   totalCalories: number,
   totalBurned: number,
   totalProtein: number,
@@ -63,11 +63,12 @@ function getDetailedAdvice(
   totalFat: number,
   goal: Goal | null,
   latestWeight: number | null,
+  isToday: boolean,
   hour: number
 ): string[] {
   const tips: string[] = [];
   if (!goal) {
-    tips.push("右上の「目標設定」からカロリー目標・体重目標・プロフィールを設定してください");
+    tips.push("右上の「目標設定」から目標を設定すると詳しいアドバイスが表示されます");
     return tips;
   }
 
@@ -75,7 +76,6 @@ function getDetailedAdvice(
   const target = goal.daily_calorie_target;
   const remaining = target - net;
 
-  // BMR計算
   let bmr: number | null = null;
   if (goal.height_cm && goal.birth_date && goal.gender && latestWeight) {
     bmr = calculateBMR(
@@ -86,91 +86,83 @@ function getDetailedAdvice(
     );
   }
 
-  // --- カロリー目標への進捗 ---
-  const progress = target > 0 ? Math.round((net / target) * 100) : 0;
-  if (hour < 12) {
-    if (totalCalories === 0) {
-      tips.push("朝食がまだです。朝食を食べると代謝が上がり、1日のエネルギー効率がUPします");
+  if (totalCalories === 0 && totalBurned === 0) {
+    if (isToday) {
+      tips.push("まだ記録がありません。チャットで食べたものを教えてください");
     } else {
-      tips.push(`午前中で ${progress}% 消化。ペース的に良い感じです`);
+      tips.push("この日は記録がありません");
     }
-  } else if (hour < 15) {
-    if (progress < 30) {
-      tips.push(`まだ目標の ${progress}% です。昼食でしっかり栄養を摂りましょう`);
-    } else if (progress > 70) {
-      tips.push(`すでに目標の ${progress}%。夕食は軽めがおすすめです`);
-    } else {
-      tips.push(`目標の ${progress}%。いいペースです`);
-    }
-  } else if (hour < 20) {
+    return tips;
+  }
+
+  // --- カロリー評価 ---
+  if (isToday) {
     if (remaining > 0) {
-      tips.push(`夕食で あと ${Math.round(remaining)} kcal 食べられます`);
+      tips.push(`あと ${Math.round(remaining)} kcal 食べられます。${hour >= 18 ? "夜食は消化の良いものがおすすめ" : hour >= 14 ? "夕食でバランスよく摂りましょう" : "午後もバランスよく食べましょう"}`);
     } else {
-      tips.push(`目標を ${Math.round(Math.abs(remaining))} kcal 超過中。夕食は控えめに`);
+      tips.push(`目標を ${Math.round(Math.abs(remaining))} kcal 超過中。${Math.abs(remaining) < 200 ? "軽い運動で調整できる範囲です" : "明日は少し控えめにして調整しましょう"}`);
     }
   } else {
+    // 過去の日
     if (remaining > 300) {
-      tips.push(`${Math.round(remaining)} kcal 余っています。食べ足りない場合は無理せず軽食をどうぞ`);
+      tips.push(`目標より ${Math.round(remaining)} kcal 少なめでした。継続的に少なすぎると筋肉が落ちるので注意`);
     } else if (remaining > 0) {
-      tips.push(`目標まであと ${Math.round(remaining)} kcal。ほぼ達成です！`);
+      tips.push(`目標内に収まっていました（残り ${Math.round(remaining)} kcal）。いいペースです`);
     } else if (Math.abs(remaining) < 200) {
-      tips.push(`${Math.round(Math.abs(remaining))} kcal の微超過。許容範囲です`);
+      tips.push(`目標を少しだけ超過（${Math.round(Math.abs(remaining))} kcal）。誤差の範囲なので問題なし`);
     } else {
-      tips.push(`${Math.round(Math.abs(remaining))} kcal オーバー。明日はその分控えめにすれば大丈夫`);
+      tips.push(`${Math.round(Math.abs(remaining))} kcal オーバーでした。次の日で調整できていれば大丈夫`);
     }
   }
 
   // --- BMRチェック ---
   if (bmr && totalCalories > 0 && totalCalories < bmr * 0.8) {
     tips.push(
-      `基礎代謝 ${bmr} kcal を大きく下回っています（現在 ${totalCalories} kcal）。健康のため最低でも基礎代謝分は摂りましょう`
+      `基礎代謝(${bmr}kcal)を大きく下回っています。体が省エネモードに入ると痩せにくくなるので最低限は食べましょう`
     );
   }
 
-  // --- PFCバランス ---
+  // --- PFC改善提案 ---
   const pfcTotal =
     (totalProtein || 0) * 4 + (totalCarbs || 0) * 4 + (totalFat || 0) * 9;
   if (pfcTotal > 0 && totalCalories > 300) {
     const pRatio = Math.round(((totalProtein * 4) / pfcTotal) * 100);
     const fRatio = Math.round(((totalFat * 9) / pfcTotal) * 100);
-    const cRatio = Math.round(((totalCarbs * 4) / pfcTotal) * 100);
 
-    const pfcParts: string[] = [];
-    if (pRatio < 15) pfcParts.push(`P ${pRatio}%（理想15-20%）→ 肉・魚・卵・豆腐を追加`);
-    else if (pRatio > 25) pfcParts.push(`P ${pRatio}%（理想15-20%）→ タンパク質やや多め`);
-
-    if (fRatio > 30) pfcParts.push(`F ${fRatio}%（理想20-30%）→ 揚げ物・脂身を控えて`);
-    else if (fRatio < 15) pfcParts.push(`F ${fRatio}%（理想20-30%）→ 良質な脂質（魚・ナッツ）を`);
-
-    if (cRatio > 65) pfcParts.push(`C ${cRatio}%（理想50-65%）→ 糖質がやや多め`);
-    else if (cRatio < 40) pfcParts.push(`C ${cRatio}%（理想50-65%）→ ご飯・パンが少なめ`);
-
-    if (pfcParts.length > 0) {
-      tips.push(`PFCバランス: ${pfcParts.join("、")}`);
-    } else {
-      tips.push(`PFCバランスは理想的です（P:${pRatio}% F:${fRatio}% C:${cRatio}%）`);
+    if (pRatio < 15) {
+      tips.push(
+        isToday
+          ? `タンパク質不足(${pRatio}%)。次の食事で鶏むね・卵・豆腐などを足すと改善します`
+          : `タンパク質が${pRatio}%と少なめでした。1食あたり手のひら1枚分のタンパク質を意識すると◎`
+      );
+    }
+    if (fRatio > 30) {
+      tips.push(
+        isToday
+          ? `脂質多め(${fRatio}%)。残りの食事はサラダ・蒸し料理などあっさり系がおすすめ`
+          : `脂質が${fRatio}%と多めでした。揚げ物→焼き・蒸しに変えるだけで改善できます`
+      );
     }
   }
 
-  // --- 目標体重への進捗 ---
+  // --- 目標体重 ---
   if (latestWeight && goal.target_weight) {
     const diff = latestWeight - goal.target_weight;
     if (diff > 0) {
-      tips.push(
-        `目標体重まで あと ${diff.toFixed(1)} kg。週0.5kgペースなら約${Math.ceil(diff / 0.5)}週間で達成可能`
-      );
-    } else if (diff < -1) {
-      tips.push(`目標体重を ${Math.abs(diff).toFixed(1)} kg 下回っています。目標の見直しも検討を`);
-    } else {
-      tips.push("目標体重圏内です！この体重をキープしましょう");
+      const weeks = Math.ceil(diff / 0.5);
+      tips.push(`目標体重まで${diff.toFixed(1)}kg。1日${Math.round((diff * 7700) / (weeks * 7))}kcalの赤字で${weeks}週間で達成できます`);
+    } else if (Math.abs(diff) < 1) {
+      tips.push("目標体重圏内！維持するために今の食事ペースを続けましょう");
     }
   }
 
-  // --- 運動 ---
-  if (totalBurned === 0 && hour >= 14) {
-    tips.push("今日はまだ運動記録がありません。20分のウォーキングで約80kcal消費できます");
-  } else if (totalBurned > 0) {
-    tips.push(`運動で ${totalBurned} kcal 消費済み。いい調子です！`);
+  // --- 運動アドバイス ---
+  if (totalBurned === 0) {
+    if (isToday) {
+      tips.push("運動記録がまだありません。15分の早歩きでも約60kcal消費できますよ");
+    }
+  } else if (totalBurned > 300) {
+    tips.push(`${totalBurned}kcal消費！その分栄養補給も忘れずに`);
   }
 
   return tips;
@@ -205,7 +197,6 @@ export default function RecordsView() {
     fetchRecords();
   }, [fetchRecords]);
 
-  // 目標と最新体重を取得
   useEffect(() => {
     fetch("/api/goals")
       .then((r) => r.json())
@@ -269,18 +260,29 @@ export default function RecordsView() {
   const totalCarbs = meals.reduce((s, m) => s + (m.carbs || 0), 0);
   const totalFat = meals.reduce((s, m) => s + (m.fat || 0), 0);
 
-  const adviceTips = isToday
-    ? getDetailedAdvice(
-        totalCalories,
-        totalBurned,
-        totalProtein,
-        totalCarbs,
-        totalFat,
-        goal,
-        latestWeight,
-        new Date().getHours()
-      )
-    : [];
+  // PFC比率
+  const pfcTotal =
+    totalProtein * 4 + totalCarbs * 4 + totalFat * 9;
+  const pfcRatio =
+    pfcTotal > 0
+      ? {
+          p: Math.round((totalProtein * 4 / pfcTotal) * 100),
+          f: Math.round((totalFat * 9 / pfcTotal) * 100),
+          c: Math.round((totalCarbs * 4 / pfcTotal) * 100),
+        }
+      : null;
+
+  const adviceTips = getAdviceForDate(
+    totalCalories,
+    totalBurned,
+    totalProtein,
+    totalCarbs,
+    totalFat,
+    goal,
+    latestWeight,
+    isToday,
+    new Date().getHours()
+  );
 
   if (loading) {
     return (
@@ -370,17 +372,14 @@ export default function RecordsView() {
       </div>
 
       {/* 目標プログレスバー */}
-      {goal && (
+      {goal && totalCalories > 0 && (
         <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
           <div className="flex justify-between text-xs text-gray-400 mb-1">
             <span>目標: {goal.daily_calorie_target} kcal</span>
             <span>
-              残り:{" "}
-              {Math.max(
-                0,
-                goal.daily_calorie_target - totalCalories + totalBurned
-              )}{" "}
-              kcal
+              {totalCalories - totalBurned > goal.daily_calorie_target
+                ? `${Math.round(totalCalories - totalBurned - goal.daily_calorie_target)} kcal 超過`
+                : `残り ${Math.round(goal.daily_calorie_target - totalCalories + totalBurned)} kcal`}
             </span>
           </div>
           <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
@@ -403,11 +402,74 @@ export default function RecordsView() {
         </div>
       )}
 
-      {/* アドバイス（今日のみ） */}
-      {isToday && adviceTips.length > 0 && (
+      {/* PFCバランス */}
+      {(totalProtein > 0 || totalCarbs > 0 || totalFat > 0) && (
+        <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+          <h3 className="text-xs font-semibold text-gray-500 mb-2">
+            PFCバランス
+          </h3>
+          {/* バー */}
+          {pfcRatio && (
+            <div className="mb-2">
+              <div className="flex h-4 rounded-full overflow-hidden">
+                <div
+                  className="bg-purple-500"
+                  style={{ width: `${pfcRatio.p}%` }}
+                />
+                <div
+                  className="bg-yellow-400"
+                  style={{ width: `${pfcRatio.c}%` }}
+                />
+                <div
+                  className="bg-red-400"
+                  style={{ width: `${pfcRatio.f}%` }}
+                />
+              </div>
+              <div className="flex justify-between mt-1 text-[10px] text-gray-400">
+                <span>P: {pfcRatio.p}%</span>
+                <span>C: {pfcRatio.c}%</span>
+                <span>F: {pfcRatio.f}%</span>
+              </div>
+            </div>
+          )}
+          {/* 数値 + 理想 */}
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div>
+              <div className="text-base font-bold text-purple-500">
+                {Math.round(totalProtein)}g
+              </div>
+              <div className="text-[10px] text-gray-400">
+                タンパク質
+              </div>
+              <div className="text-[9px] text-gray-300">理想 15-20%</div>
+            </div>
+            <div>
+              <div className="text-base font-bold text-yellow-500">
+                {Math.round(totalCarbs)}g
+              </div>
+              <div className="text-[10px] text-gray-400">
+                炭水化物
+              </div>
+              <div className="text-[9px] text-gray-300">理想 50-65%</div>
+            </div>
+            <div>
+              <div className="text-base font-bold text-red-400">
+                {Math.round(totalFat)}g
+              </div>
+              <div className="text-[10px] text-gray-400">
+                脂質
+              </div>
+              <div className="text-[9px] text-gray-300">理想 20-30%</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* アドバイス（全日付） */}
+      {adviceTips.length > 0 && (
         <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-100">
           <div className="text-xs font-bold text-orange-600 mb-2">
-            今日のアドバイス
+            {isToday ? "今日のアドバイス" : `${date.slice(5).replace("-", "/")} の振り返り`}
           </div>
           <div className="space-y-2">
             {adviceTips.map((tip, i) => (
@@ -563,7 +625,6 @@ export default function RecordsView() {
 
       <div className="h-4" />
 
-      {/* 編集モーダル */}
       {editTarget && (
         <EditModal
           target={editTarget}
@@ -575,18 +636,13 @@ export default function RecordsView() {
   );
 }
 
-// --- 編集モーダル ---
 function EditModal({
   target,
   onSave,
   onClose,
 }: {
   target: EditTarget;
-  onSave: (
-    type: string,
-    id: string,
-    updates: Record<string, unknown>
-  ) => void;
+  onSave: (type: string, id: string, updates: Record<string, unknown>) => void;
   onClose: () => void;
 }) {
   const [form, setForm] = useState<Record<string, string>>({});
@@ -675,14 +731,10 @@ function EditModal({
           {target.type === "meal" && (
             <>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">
-                  食事タイプ
-                </label>
+                <label className="block text-xs text-gray-500 mb-1">食事タイプ</label>
                 <select
                   value={form.meal_type || ""}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, meal_type: e.target.value }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, meal_type: e.target.value }))}
                   className={inputClass}
                 >
                   <option value="breakfast">朝食</option>
@@ -692,69 +744,29 @@ function EditModal({
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">
-                  内容
-                </label>
+                <label className="block text-xs text-gray-500 mb-1">内容</label>
                 <input
                   value={form.description || ""}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, description: e.target.value }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   className={inputClass}
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">
-                    カロリー (kcal)
-                  </label>
-                  <input
-                    type="number"
-                    value={form.calories || ""}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, calories: e.target.value }))
-                    }
-                    className={inputClass}
-                  />
+                  <label className="block text-xs text-gray-500 mb-1">カロリー</label>
+                  <input type="number" value={form.calories || ""} onChange={(e) => setForm((f) => ({ ...f, calories: e.target.value }))} className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">
-                    タンパク質 (g)
-                  </label>
-                  <input
-                    type="number"
-                    value={form.protein || ""}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, protein: e.target.value }))
-                    }
-                    className={inputClass}
-                  />
+                  <label className="block text-xs text-gray-500 mb-1">タンパク質(g)</label>
+                  <input type="number" value={form.protein || ""} onChange={(e) => setForm((f) => ({ ...f, protein: e.target.value }))} className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">
-                    脂質 (g)
-                  </label>
-                  <input
-                    type="number"
-                    value={form.fat || ""}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, fat: e.target.value }))
-                    }
-                    className={inputClass}
-                  />
+                  <label className="block text-xs text-gray-500 mb-1">脂質(g)</label>
+                  <input type="number" value={form.fat || ""} onChange={(e) => setForm((f) => ({ ...f, fat: e.target.value }))} className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">
-                    炭水化物 (g)
-                  </label>
-                  <input
-                    type="number"
-                    value={form.carbs || ""}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, carbs: e.target.value }))
-                    }
-                    className={inputClass}
-                  />
+                  <label className="block text-xs text-gray-500 mb-1">炭水化物(g)</label>
+                  <input type="number" value={form.carbs || ""} onChange={(e) => setForm((f) => ({ ...f, carbs: e.target.value }))} className={inputClass} />
                 </div>
               </div>
             </>
@@ -763,49 +775,17 @@ function EditModal({
           {target.type === "exercise" && (
             <>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">
-                  内容
-                </label>
-                <input
-                  value={form.description || ""}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, description: e.target.value }))
-                  }
-                  className={inputClass}
-                />
+                <label className="block text-xs text-gray-500 mb-1">内容</label>
+                <input value={form.description || ""} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} className={inputClass} />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">
-                    消費カロリー (kcal)
-                  </label>
-                  <input
-                    type="number"
-                    value={form.calories_burned || ""}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        calories_burned: e.target.value,
-                      }))
-                    }
-                    className={inputClass}
-                  />
+                  <label className="block text-xs text-gray-500 mb-1">消費カロリー</label>
+                  <input type="number" value={form.calories_burned || ""} onChange={(e) => setForm((f) => ({ ...f, calories_burned: e.target.value }))} className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">
-                    時間 (分)
-                  </label>
-                  <input
-                    type="number"
-                    value={form.duration_minutes || ""}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        duration_minutes: e.target.value,
-                      }))
-                    }
-                    className={inputClass}
-                  />
+                  <label className="block text-xs text-gray-500 mb-1">時間(分)</label>
+                  <input type="number" value={form.duration_minutes || ""} onChange={(e) => setForm((f) => ({ ...f, duration_minutes: e.target.value }))} className={inputClass} />
                 </div>
               </div>
             </>
@@ -813,33 +793,17 @@ function EditModal({
 
           {target.type === "weight" && (
             <div>
-              <label className="block text-xs text-gray-500 mb-1">
-                体重 (kg)
-              </label>
-              <input
-                type="number"
-                step="0.1"
-                value={form.weight || ""}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, weight: e.target.value }))
-                }
-                className={inputClass}
-              />
+              <label className="block text-xs text-gray-500 mb-1">体重(kg)</label>
+              <input type="number" step="0.1" value={form.weight || ""} onChange={(e) => setForm((f) => ({ ...f, weight: e.target.value }))} className={inputClass} />
             </div>
           )}
         </div>
 
         <div className="flex gap-3 mt-5">
-          <button
-            onClick={onClose}
-            className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-600 font-medium text-base"
-          >
+          <button onClick={onClose} className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-600 font-medium text-base">
             キャンセル
           </button>
-          <button
-            onClick={handleSubmit}
-            className="flex-1 py-3 rounded-lg bg-green-500 text-white font-medium text-base active:bg-green-600"
-          >
+          <button onClick={handleSubmit} className="flex-1 py-3 rounded-lg bg-green-500 text-white font-medium text-base active:bg-green-600">
             保存
           </button>
         </div>

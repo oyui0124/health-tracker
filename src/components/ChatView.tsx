@@ -176,7 +176,31 @@ export default function ChatView() {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="border-t border-gray-200 bg-white px-4 py-3 pb-[env(safe-area-inset-bottom,12px)]">
+      <div className="border-t border-gray-200 bg-white px-4 py-2 pb-[env(safe-area-inset-bottom,8px)]">
+        {/* テンプレートボタン */}
+        <div className="flex gap-2 mb-2 overflow-x-auto no-scrollbar">
+          {[
+            { label: "食事", text: "朝ごはんに" },
+            { label: "昼食", text: "お昼に" },
+            { label: "夕食", text: "夜ご飯に" },
+            { label: "間食", text: "間食で" },
+            { label: "体重", text: "体重 " },
+            { label: "運動", text: "分 歩いた" },
+            { label: "今日の状況", text: "今日の摂取状況を教えて" },
+            { label: "修正", text: "さっきの記録を修正して、" },
+          ].map((t) => (
+            <button
+              key={t.label}
+              onClick={() => {
+                setInput(t.text);
+                inputRef.current?.focus();
+              }}
+              className="shrink-0 px-3 py-1.5 rounded-full bg-green-50 text-green-700 text-xs font-medium border border-green-200 active:bg-green-100"
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
         <div className="flex items-end gap-2">
           <textarea
             ref={inputRef}
