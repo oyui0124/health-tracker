@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 import { getSupabase } from "@/lib/supabase";
 
-function getGemini() {
-  const apiKey = process.env.GEMINI_API_KEY;
+function getGroq() {
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not set in environment variables");
+    throw new Error("GROQ_API_KEY is not set");
   }
-  const genAI = new GoogleGenerativeAI(apiKey);
-  return genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  return new Groq({ apiKey });
 }
 
 const SYSTEM_PROMPT = `あなたは優しくて知識豊富なパーソナル健康管理アシスタントです。
@@ -241,25 +240,33 @@ export async function POST(req: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(20);
 
-    // Gemini用の履歴を構築
-    const history = (chatHistory || [])
-      .reverse()
-      .map((m: { role: string; content: string }) => ({
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }],
-      }));
-
-    const model = getGemini();
-    const chat = model.startChat({
-      history,
-      systemInstruction: {
-        role: "user",
-        parts: [{ text: `${SYSTEM_PROMPT}\n\n${todaySummary}\n${recentHistory}` }],
+    // Groq用のメッセージを構築
+    const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
+      {
+        role: "system",
+        content: `${SYSTEM_PROMPT}\n\n${todaySummary}\n${recentHistory}`,
       },
+      ...(chatHistory || [])
+        .reverse()
+        .map((m: { role: string; content: string }) => ({
+          role: m.role as "user" | "assistant",
+          content: m.content,
+        })),
+      {
+        role: "user" as const,
+        content: message,
+      },
+    ];
+
+    const groq = getGroq();
+    const response = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages,
+      max_tokens: 1024,
+      temperature: 0.7,
     });
 
-    const result = await chat.sendMessage(message);
-    const assistantMessage = result.response.text();
+    const assistantMessage = response.choices[0]?.message?.content || "";
 
     // エントリを解析して保存
     const parsed = parseEntries(assistantMessage);
