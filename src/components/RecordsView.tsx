@@ -179,6 +179,7 @@ export default function RecordsView() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
+  const [addType, setAddType] = useState<"meal" | "exercise" | "weight" | null>(null);
 
   const fetchRecords = useCallback(() => {
     setLoading(true);
@@ -408,58 +409,36 @@ export default function RecordsView() {
           <h3 className="text-xs font-semibold text-gray-500 mb-2">
             PFCバランス
           </h3>
-          {/* バー */}
           {pfcRatio && (
             <div className="mb-2">
               <div className="flex h-4 rounded-full overflow-hidden">
-                <div
-                  className="bg-purple-500"
-                  style={{ width: `${pfcRatio.p}%` }}
-                />
-                <div
-                  className="bg-yellow-400"
-                  style={{ width: `${pfcRatio.c}%` }}
-                />
-                <div
-                  className="bg-red-400"
-                  style={{ width: `${pfcRatio.f}%` }}
-                />
-              </div>
-              <div className="flex justify-between mt-1 text-[10px] text-gray-400">
-                <span>P: {pfcRatio.p}%</span>
-                <span>C: {pfcRatio.c}%</span>
-                <span>F: {pfcRatio.f}%</span>
+                <div className="bg-purple-500" style={{ width: `${pfcRatio.p}%` }} />
+                <div className="bg-yellow-400" style={{ width: `${pfcRatio.c}%` }} />
+                <div className="bg-red-400" style={{ width: `${pfcRatio.f}%` }} />
               </div>
             </div>
           )}
-          {/* 数値 + 理想 */}
           <div className="grid grid-cols-3 gap-2 text-center">
             <div>
               <div className="text-base font-bold text-purple-500">
-                {Math.round(totalProtein)}g
+                {Math.round(totalProtein)}/{goal ? Math.round(goal.daily_calorie_target * 0.175 / 4) : "—"}
               </div>
-              <div className="text-[10px] text-gray-400">
-                タンパク質
-              </div>
-              <div className="text-[9px] text-gray-300">理想 15-20%</div>
+              <div className="text-[10px] text-gray-400">P (g)</div>
+              {pfcRatio && <div className="text-[9px] text-gray-300">{pfcRatio.p}% (理想15-20%)</div>}
             </div>
             <div>
               <div className="text-base font-bold text-yellow-500">
-                {Math.round(totalCarbs)}g
+                {Math.round(totalCarbs)}/{goal ? Math.round(goal.daily_calorie_target * 0.575 / 4) : "—"}
               </div>
-              <div className="text-[10px] text-gray-400">
-                炭水化物
-              </div>
-              <div className="text-[9px] text-gray-300">理想 50-65%</div>
+              <div className="text-[10px] text-gray-400">C (g)</div>
+              {pfcRatio && <div className="text-[9px] text-gray-300">{pfcRatio.c}% (理想50-65%)</div>}
             </div>
             <div>
               <div className="text-base font-bold text-red-400">
-                {Math.round(totalFat)}g
+                {Math.round(totalFat)}/{goal ? Math.round(goal.daily_calorie_target * 0.25 / 9) : "—"}
               </div>
-              <div className="text-[10px] text-gray-400">
-                脂質
-              </div>
-              <div className="text-[9px] text-gray-300">理想 20-30%</div>
+              <div className="text-[10px] text-gray-400">F (g)</div>
+              {pfcRatio && <div className="text-[9px] text-gray-300">{pfcRatio.f}% (理想20-30%)</div>}
             </div>
           </div>
         </div>
@@ -481,6 +460,28 @@ export default function RecordsView() {
           </div>
         </div>
       )}
+
+      {/* 追加ボタン */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setAddType("meal")}
+          className="flex-1 py-2.5 rounded-xl bg-green-500 text-white text-sm font-medium active:bg-green-600"
+        >
+          + 食事
+        </button>
+        <button
+          onClick={() => setAddType("exercise")}
+          className="flex-1 py-2.5 rounded-xl bg-orange-500 text-white text-sm font-medium active:bg-orange-600"
+        >
+          + 運動
+        </button>
+        <button
+          onClick={() => setAddType("weight")}
+          className="flex-1 py-2.5 rounded-xl bg-blue-500 text-white text-sm font-medium active:bg-blue-600"
+        >
+          + 体重
+        </button>
+      </div>
 
       {/* 食事一覧 */}
       <div>
@@ -632,6 +633,23 @@ export default function RecordsView() {
           onClose={() => setEditTarget(null)}
         />
       )}
+
+      {addType && (
+        <AddModal
+          type={addType}
+          date={date}
+          onSave={async (data) => {
+            await fetch("/api/records/add", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(data),
+            });
+            setAddType(null);
+            fetchRecords();
+          }}
+          onClose={() => setAddType(null)}
+        />
+      )}
     </div>
   );
 }
@@ -704,6 +722,8 @@ function EditModal({
   const inputClass =
     "w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:border-green-500";
 
+  const inputClass2 = inputClass;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-2xl p-5 mx-4 w-full max-w-sm shadow-xl max-h-[90vh] overflow-y-auto">
@@ -724,11 +744,169 @@ function EditModal({
               onChange={(e) =>
                 setForm((f) => ({ ...f, date: e.target.value }))
               }
-              className={inputClass}
+              className={inputClass2}
             />
           </div>
 
           {target.type === "meal" && (
+            <>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">食事タイプ</label>
+                <select
+                  value={form.meal_type || ""}
+                  onChange={(e) => setForm((f) => ({ ...f, meal_type: e.target.value }))}
+                  className={inputClass2}
+                >
+                  <option value="breakfast">朝食</option>
+                  <option value="lunch">昼食</option>
+                  <option value="dinner">夕食</option>
+                  <option value="snack">間食</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">内容</label>
+                <input
+                  value={form.description || ""}
+                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                  className={inputClass2}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">カロリー</label>
+                  <input type="number" value={form.calories || ""} onChange={(e) => setForm((f) => ({ ...f, calories: e.target.value }))} className={inputClass2} />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">タンパク質(g)</label>
+                  <input type="number" value={form.protein || ""} onChange={(e) => setForm((f) => ({ ...f, protein: e.target.value }))} className={inputClass2} />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">脂質(g)</label>
+                  <input type="number" value={form.fat || ""} onChange={(e) => setForm((f) => ({ ...f, fat: e.target.value }))} className={inputClass2} />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">炭水化物(g)</label>
+                  <input type="number" value={form.carbs || ""} onChange={(e) => setForm((f) => ({ ...f, carbs: e.target.value }))} className={inputClass2} />
+                </div>
+              </div>
+            </>
+          )}
+
+          {target.type === "exercise" && (
+            <>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">内容</label>
+                <input value={form.description || ""} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} className={inputClass2} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">消費カロリー</label>
+                  <input type="number" value={form.calories_burned || ""} onChange={(e) => setForm((f) => ({ ...f, calories_burned: e.target.value }))} className={inputClass2} />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">時間(分)</label>
+                  <input type="number" value={form.duration_minutes || ""} onChange={(e) => setForm((f) => ({ ...f, duration_minutes: e.target.value }))} className={inputClass2} />
+                </div>
+              </div>
+            </>
+          )}
+
+          {target.type === "weight" && (
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">体重(kg)</label>
+              <input type="number" step="0.1" value={form.weight || ""} onChange={(e) => setForm((f) => ({ ...f, weight: e.target.value }))} className={inputClass2} />
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-3 mt-5">
+          <button onClick={onClose} className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-600 font-medium text-base">
+            キャンセル
+          </button>
+          <button onClick={handleSubmit} className="flex-1 py-3 rounded-lg bg-green-500 text-white font-medium text-base active:bg-green-600">
+            保存
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AddModal({
+  type,
+  date,
+  onSave,
+  onClose,
+}: {
+  type: "meal" | "exercise" | "weight";
+  date: string;
+  onSave: (data: Record<string, unknown>) => void;
+  onClose: () => void;
+}) {
+  const getInitialForm = (): Record<string, string> => {
+    if (type === "meal") {
+      return { date, meal_type: "breakfast", description: "", calories: "", protein: "", fat: "", carbs: "" };
+    } else if (type === "exercise") {
+      return { date, description: "", calories_burned: "", duration_minutes: "" };
+    }
+    return { date, weight: "" };
+  };
+  const [form, setForm] = useState<Record<string, string>>(getInitialForm);
+
+  const handleSubmit = () => {
+    if (type === "meal") {
+      if (!form.description) return;
+      onSave({
+        type: "meal",
+        date: form.date,
+        meal_type: form.meal_type,
+        description: form.description,
+        calories: parseInt(form.calories) || 0,
+        protein: parseInt(form.protein) || 0,
+        fat: parseInt(form.fat) || 0,
+        carbs: parseInt(form.carbs) || 0,
+      });
+    } else if (type === "exercise") {
+      if (!form.description) return;
+      onSave({
+        type: "exercise",
+        date: form.date,
+        description: form.description,
+        calories_burned: parseInt(form.calories_burned) || 0,
+        duration_minutes: parseInt(form.duration_minutes) || 0,
+      });
+    } else {
+      if (!form.weight) return;
+      onSave({
+        type: "weight",
+        date: form.date,
+        weight: parseFloat(form.weight) || 0,
+      });
+    }
+  };
+
+  const inputClass =
+    "w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:border-green-500";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-2xl p-5 mx-4 w-full max-w-sm shadow-xl max-h-[90vh] overflow-y-auto">
+        <h2 className="text-base font-bold mb-4">
+          {type === "meal" ? "食事を追加" : type === "exercise" ? "運動を追加" : "体重を記録"}
+        </h2>
+
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">日付</label>
+            <input
+              type="date"
+              value={form.date || ""}
+              onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+              className={inputClass}
+            />
+          </div>
+
+          {type === "meal" && (
             <>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">食事タイプ</label>
@@ -748,13 +926,14 @@ function EditModal({
                 <input
                   value={form.description || ""}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                  placeholder="例: トースト1枚とコーヒー"
                   className={inputClass}
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">カロリー</label>
-                  <input type="number" value={form.calories || ""} onChange={(e) => setForm((f) => ({ ...f, calories: e.target.value }))} className={inputClass} />
+                  <input type="number" value={form.calories || ""} onChange={(e) => setForm((f) => ({ ...f, calories: e.target.value }))} placeholder="kcal" className={inputClass} />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">タンパク質(g)</label>
@@ -772,29 +951,34 @@ function EditModal({
             </>
           )}
 
-          {target.type === "exercise" && (
+          {type === "exercise" && (
             <>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">内容</label>
-                <input value={form.description || ""} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} className={inputClass} />
+                <input
+                  value={form.description || ""}
+                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                  placeholder="例: ジョギング"
+                  className={inputClass}
+                />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">消費カロリー</label>
-                  <input type="number" value={form.calories_burned || ""} onChange={(e) => setForm((f) => ({ ...f, calories_burned: e.target.value }))} className={inputClass} />
+                  <input type="number" value={form.calories_burned || ""} onChange={(e) => setForm((f) => ({ ...f, calories_burned: e.target.value }))} placeholder="kcal" className={inputClass} />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">時間(分)</label>
-                  <input type="number" value={form.duration_minutes || ""} onChange={(e) => setForm((f) => ({ ...f, duration_minutes: e.target.value }))} className={inputClass} />
+                  <input type="number" value={form.duration_minutes || ""} onChange={(e) => setForm((f) => ({ ...f, duration_minutes: e.target.value }))} placeholder="分" className={inputClass} />
                 </div>
               </div>
             </>
           )}
 
-          {target.type === "weight" && (
+          {type === "weight" && (
             <div>
               <label className="block text-xs text-gray-500 mb-1">体重(kg)</label>
-              <input type="number" step="0.1" value={form.weight || ""} onChange={(e) => setForm((f) => ({ ...f, weight: e.target.value }))} className={inputClass} />
+              <input type="number" step="0.1" value={form.weight || ""} onChange={(e) => setForm((f) => ({ ...f, weight: e.target.value }))} placeholder="例: 65.2" className={inputClass} />
             </div>
           )}
         </div>
@@ -804,7 +988,7 @@ function EditModal({
             キャンセル
           </button>
           <button onClick={handleSubmit} className="flex-1 py-3 rounded-lg bg-green-500 text-white font-medium text-base active:bg-green-600">
-            保存
+            追加
           </button>
         </div>
       </div>
