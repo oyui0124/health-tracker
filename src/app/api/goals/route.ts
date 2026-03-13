@@ -18,11 +18,18 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const db = getSupabase();
-  const { target_weight, daily_calorie_target } = await req.json();
+  const { target_weight, daily_calorie_target, height_cm, birth_date, gender } =
+    await req.json();
 
   const { data, error } = await db
     .from("user_goals")
-    .insert({ target_weight, daily_calorie_target })
+    .insert({
+      target_weight,
+      daily_calorie_target,
+      height_cm,
+      birth_date,
+      gender,
+    })
     .select()
     .single();
 

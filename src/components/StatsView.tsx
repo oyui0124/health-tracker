@@ -12,6 +12,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { calculateBMR, getAge } from "@/lib/bmr";
 
 type DailyStats = Record<
   string,
@@ -25,10 +26,18 @@ type DailyStats = Record<
   }
 >;
 
+type Goal = {
+  target_weight: number;
+  daily_calorie_target: number;
+  height_cm?: number;
+  birth_date?: string;
+  gender?: "male" | "female";
+};
+
 type SummaryData = {
   dailyStats: DailyStats;
   weights: { date: string; weight: number }[];
-  goal: { target_weight: number; daily_calorie_target: number } | null;
+  goal: Goal | null;
 };
 
 export default function StatsView() {
@@ -65,7 +74,7 @@ export default function StatsView() {
 
   const chartData = Object.entries(data.dailyStats)
     .map(([date, stats]) => ({
-      date: date.slice(5), // MM-DD
+      date: date.slice(5),
       calories: stats.calories,
       burned: stats.burned,
       net: stats.calories - stats.burned,
@@ -81,6 +90,32 @@ export default function StatsView() {
   const todayKey = new Date().toISOString().split("T")[0];
   const today = data.dailyStats[todayKey];
   const goalCalorie = data.goal?.daily_calorie_target || 2000;
+
+  // BMR計算
+  const latestWeight = data.weights.length
+    ? data.weights[data.weights.length - 1].weight
+    : null;
+  const bmr =
+    data.goal?.height_cm && data.goal?.birth_date && data.goal?.gender && latestWeight
+      ? calculateBMR(
+          latestWeight,
+          data.goal.height_cm,
+          getAge(data.goal.birth_date),
+          data.goal.gender
+        )
+      : null;
+
+  // PFC計算
+  const pfcTotal = today
+    ? (today.protein || 0) * 4 + (today.carbs || 0) * 4 + (today.fat || 0) * 9
+    : 0;
+  const pfcRatio = today && pfcTotal > 0
+    ? {
+        protein: Math.round(((today.protein || 0) * 4 / pfcTotal) * 100),
+        carbs: Math.round(((today.carbs || 0) * 4 / pfcTotal) * 100),
+        fat: Math.round(((today.fat || 0) * 9 / pfcTotal) * 100),
+      }
+    : null;
 
   return (
     <div className="h-full overflow-y-auto no-scrollbar px-4 py-4 space-y-5">
@@ -100,6 +135,34 @@ export default function StatsView() {
           </button>
         ))}
       </div>
+
+      {/* BMR & 基本情報 */}
+      {bmr && (
+        <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-4 border border-green-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs text-gray-500">基礎代謝（BMR）</div>
+              <div className="text-2xl font-bold text-green-700">{bmr} kcal/日</div>
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-gray-500">最新体重</div>
+              <div className="text-lg font-bold text-blue-600">
+                {latestWeight} kg
+              </div>
+            </div>
+            {data.goal?.target_weight && (
+              <div className="text-right">
+                <div className="text-xs text-gray-500">目標まで</div>
+                <div className="text-lg font-bold text-orange-500">
+                  {latestWeight
+                    ? `${(latestWeight - data.goal.target_weight).toFixed(1)} kg`
+                    : "-"}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 今日のサマリー */}
       {today && (
@@ -133,8 +196,7 @@ export default function StatsView() {
             <div className="flex justify-between text-xs text-gray-400 mb-1">
               <span>目標: {goalCalorie} kcal</span>
               <span>
-                残り: {Math.max(0, goalCalorie - today.calories + today.burned)}{" "}
-                kcal
+                残り: {Math.max(0, goalCalorie - today.calories + today.burned)} kcal
               </span>
             </div>
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -148,6 +210,61 @@ export default function StatsView() {
                   width: `${Math.min(100, ((today.calories - today.burned) / goalCalorie) * 100)}%`,
                 }}
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PFCバランス */}
+      {today && (today.protein > 0 || today.carbs > 0 || today.fat > 0) && (
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+          <h3 className="text-sm font-semibold text-gray-500 mb-3">
+            今日のPFCバランス
+          </h3>
+
+          {/* PFCバー */}
+          {pfcRatio && (
+            <div className="mb-3">
+              <div className="flex h-4 rounded-full overflow-hidden">
+                <div
+                  className="bg-purple-500"
+                  style={{ width: `${pfcRatio.protein}%` }}
+                />
+                <div
+                  className="bg-yellow-400"
+                  style={{ width: `${pfcRatio.carbs}%` }}
+                />
+                <div
+                  className="bg-red-400"
+                  style={{ width: `${pfcRatio.fat}%` }}
+                />
+              </div>
+              <div className="flex justify-between mt-1 text-[10px] text-gray-400">
+                <span>P: {pfcRatio.protein}%</span>
+                <span>C: {pfcRatio.carbs}%</span>
+                <span>F: {pfcRatio.fat}%</span>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div>
+              <div className="text-lg font-bold text-purple-500">
+                {Math.round(today.protein)}g
+              </div>
+              <div className="text-xs text-gray-400">タンパク質</div>
+            </div>
+            <div>
+              <div className="text-lg font-bold text-yellow-500">
+                {Math.round(today.carbs)}g
+              </div>
+              <div className="text-xs text-gray-400">炭水化物</div>
+            </div>
+            <div>
+              <div className="text-lg font-bold text-red-400">
+                {Math.round(today.fat)}g
+              </div>
+              <div className="text-xs text-gray-400">脂質</div>
             </div>
           </div>
         </div>
@@ -212,35 +329,6 @@ export default function StatsView() {
           <p className="text-center text-gray-400 py-8">データがありません</p>
         )}
       </div>
-
-      {/* PFCバランス */}
-      {today && (today.protein > 0 || today.carbs > 0 || today.fat > 0) && (
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-500 mb-3">
-            今日のPFCバランス
-          </h3>
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div>
-              <div className="text-lg font-bold text-purple-500">
-                {Math.round(today.protein)}g
-              </div>
-              <div className="text-xs text-gray-400">タンパク質</div>
-            </div>
-            <div>
-              <div className="text-lg font-bold text-yellow-500">
-                {Math.round(today.carbs)}g
-              </div>
-              <div className="text-xs text-gray-400">炭水化物</div>
-            </div>
-            <div>
-              <div className="text-lg font-bold text-red-400">
-                {Math.round(today.fat)}g
-              </div>
-              <div className="text-xs text-gray-400">脂質</div>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="h-4" />
     </div>

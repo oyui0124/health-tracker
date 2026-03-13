@@ -9,6 +9,9 @@ type Props = {
 export default function GoalModal({ onClose }: Props) {
   const [targetWeight, setTargetWeight] = useState("");
   const [dailyCalorie, setDailyCalorie] = useState("");
+  const [heightCm, setHeightCm] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [gender, setGender] = useState<"male" | "female" | "">("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -18,6 +21,9 @@ export default function GoalModal({ onClose }: Props) {
         if (d.goal) {
           setTargetWeight(String(d.goal.target_weight));
           setDailyCalorie(String(d.goal.daily_calorie_target));
+          if (d.goal.height_cm) setHeightCm(String(d.goal.height_cm));
+          if (d.goal.birth_date) setBirthDate(d.goal.birth_date);
+          if (d.goal.gender) setGender(d.goal.gender);
         }
       });
   }, []);
@@ -32,6 +38,9 @@ export default function GoalModal({ onClose }: Props) {
       body: JSON.stringify({
         target_weight: parseFloat(targetWeight),
         daily_calorie_target: parseInt(dailyCalorie),
+        height_cm: heightCm ? parseFloat(heightCm) : null,
+        birth_date: birthDate || null,
+        gender: gender || null,
       }),
     });
 
@@ -41,8 +50,8 @@ export default function GoalModal({ onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl p-6 mx-4 w-full max-w-sm shadow-xl">
-        <h2 className="text-lg font-bold mb-4">目標設定</h2>
+      <div className="bg-white rounded-2xl p-6 mx-4 w-full max-w-sm shadow-xl max-h-[90vh] overflow-y-auto">
+        <h2 className="text-lg font-bold mb-4">目標・プロフィール設定</h2>
 
         <div className="space-y-4">
           <div>
@@ -70,6 +79,70 @@ export default function GoalModal({ onClose }: Props) {
               placeholder="1800"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg focus:outline-none focus:border-green-500"
             />
+          </div>
+
+          <div className="border-t border-gray-200 pt-4">
+            <p className="text-sm font-semibold text-gray-600 mb-3">
+              基礎代謝（BMR）計算用
+            </p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">
+                  身長 (cm)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={heightCm}
+                  onChange={(e) => setHeightCm(e.target.value)}
+                  placeholder="165"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg focus:outline-none focus:border-green-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">
+                  生年月日
+                </label>
+                <input
+                  type="date"
+                  value={birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg focus:outline-none focus:border-green-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">
+                  性別
+                </label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setGender("female")}
+                    className={`flex-1 py-2 rounded-lg border font-medium transition-colors ${
+                      gender === "female"
+                        ? "bg-pink-500 text-white border-pink-500"
+                        : "border-gray-300 text-gray-600"
+                    }`}
+                  >
+                    女性
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGender("male")}
+                    className={`flex-1 py-2 rounded-lg border font-medium transition-colors ${
+                      gender === "male"
+                        ? "bg-blue-500 text-white border-blue-500"
+                        : "border-gray-300 text-gray-600"
+                    }`}
+                  >
+                    男性
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
