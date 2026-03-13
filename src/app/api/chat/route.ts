@@ -252,7 +252,10 @@ export async function POST(req: NextRequest) {
     const model = getGemini();
     const chat = model.startChat({
       history,
-      systemInstruction: `${SYSTEM_PROMPT}\n\n${todaySummary}\n${recentHistory}`,
+      systemInstruction: {
+        role: "user",
+        parts: [{ text: `${SYSTEM_PROMPT}\n\n${todaySummary}\n${recentHistory}` }],
+      },
     });
 
     const result = await chat.sendMessage(message);
