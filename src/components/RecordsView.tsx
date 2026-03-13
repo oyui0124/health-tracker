@@ -350,95 +350,82 @@ export default function RecordsView() {
         )}
       </div>
 
-      {/* サマリー */}
-      <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="bg-green-50 rounded-xl p-2">
-          <div className="text-lg font-bold text-green-600">
-            {totalCalories}
+      {/* カロリーサマリー + プログレス */}
+      <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+        <div className="flex items-baseline justify-between mb-1">
+          <div>
+            <span className="text-2xl font-bold text-gray-800">{totalCalories - totalBurned}</span>
+            <span className="text-sm text-gray-400 ml-1">kcal</span>
           </div>
-          <div className="text-[10px] text-gray-400">摂取 kcal</div>
+          {goal && (
+            <span className="text-xs text-gray-400">
+              / {goal.daily_calorie_target} kcal
+            </span>
+          )}
         </div>
-        <div className="bg-orange-50 rounded-xl p-2">
-          <div className="text-lg font-bold text-orange-500">
-            {totalBurned}
-          </div>
-          <div className="text-[10px] text-gray-400">消費 kcal</div>
+        <div className="flex gap-4 text-xs text-gray-400 mb-2">
+          <span>摂取 {totalCalories}</span>
+          <span>消費 -{totalBurned}</span>
         </div>
-        <div className="bg-blue-50 rounded-xl p-2">
-          <div className="text-lg font-bold text-blue-500">
-            {totalCalories - totalBurned}
-          </div>
-          <div className="text-[10px] text-gray-400">正味 kcal</div>
-        </div>
-      </div>
-
-      {/* 目標プログレスバー */}
-      {goal && totalCalories > 0 && (
-        <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-          <div className="flex justify-between text-xs text-gray-400 mb-1">
-            <span>目標: {goal.daily_calorie_target} kcal</span>
-            <span>
+        {goal && totalCalories > 0 && (
+          <div>
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${
+                  totalCalories - totalBurned > goal.daily_calorie_target
+                    ? "bg-red-400"
+                    : "bg-green-400"
+                }`}
+                style={{
+                  width: `${Math.min(
+                    100,
+                    ((totalCalories - totalBurned) /
+                      goal.daily_calorie_target) *
+                      100
+                  )}%`,
+                }}
+              />
+            </div>
+            <div className="text-[10px] text-gray-400 text-right mt-0.5">
               {totalCalories - totalBurned > goal.daily_calorie_target
                 ? `${Math.round(totalCalories - totalBurned - goal.daily_calorie_target)} kcal 超過`
                 : `残り ${Math.round(goal.daily_calorie_target - totalCalories + totalBurned)} kcal`}
-            </span>
+            </div>
           </div>
-          <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all ${
-                totalCalories - totalBurned > goal.daily_calorie_target
-                  ? "bg-red-400"
-                  : "bg-green-400"
-              }`}
-              style={{
-                width: `${Math.min(
-                  100,
-                  ((totalCalories - totalBurned) /
-                    goal.daily_calorie_target) *
-                    100
-                )}%`,
-              }}
-            />
-          </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* PFCバランス */}
       {(totalProtein > 0 || totalCarbs > 0 || totalFat > 0) && (
         <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-          <h3 className="text-xs font-semibold text-gray-500 mb-2">
-            PFCバランス
-          </h3>
+          <div className="text-[10px] text-gray-400 mb-2">PFCバランス</div>
           {pfcRatio && (
             <div className="mb-2">
-              <div className="flex h-4 rounded-full overflow-hidden">
-                <div className="bg-purple-500" style={{ width: `${pfcRatio.p}%` }} />
-                <div className="bg-yellow-400" style={{ width: `${pfcRatio.c}%` }} />
-                <div className="bg-red-400" style={{ width: `${pfcRatio.f}%` }} />
+              <div className="flex h-3 rounded-full overflow-hidden">
+                <div className="bg-gray-700" style={{ width: `${pfcRatio.p}%` }} />
+                <div className="bg-gray-400" style={{ width: `${pfcRatio.c}%` }} />
+                <div className="bg-gray-300" style={{ width: `${pfcRatio.f}%` }} />
               </div>
             </div>
           )}
           <div className="grid grid-cols-3 gap-2 text-center">
             <div>
-              <div className="text-base font-bold text-purple-500">
-                {Math.round(totalProtein)}/{goal ? Math.round(goal.daily_calorie_target * 0.175 / 4) : "—"}
+              <div className="text-sm font-bold text-gray-700">
+                {Math.round(totalProtein)}<span className="text-gray-300 font-normal">/{goal ? Math.round(goal.daily_calorie_target * 0.175 / 4) : "—"}</span>
               </div>
               <div className="text-[10px] text-gray-400">P (g)</div>
-              {pfcRatio && <div className="text-[9px] text-gray-300">{pfcRatio.p}% (理想15-20%)</div>}
             </div>
             <div>
-              <div className="text-base font-bold text-yellow-500">
-                {Math.round(totalCarbs)}/{goal ? Math.round(goal.daily_calorie_target * 0.575 / 4) : "—"}
+              <div className="text-sm font-bold text-gray-700">
+                {Math.round(totalCarbs)}<span className="text-gray-300 font-normal">/{goal ? Math.round(goal.daily_calorie_target * 0.575 / 4) : "—"}</span>
               </div>
               <div className="text-[10px] text-gray-400">C (g)</div>
-              {pfcRatio && <div className="text-[9px] text-gray-300">{pfcRatio.c}% (理想50-65%)</div>}
             </div>
             <div>
-              <div className="text-base font-bold text-red-400">
-                {Math.round(totalFat)}/{goal ? Math.round(goal.daily_calorie_target * 0.25 / 9) : "—"}
+              <div className="text-sm font-bold text-gray-700">
+                {Math.round(totalFat)}<span className="text-gray-300 font-normal">/{goal ? Math.round(goal.daily_calorie_target * 0.25 / 9) : "—"}</span>
               </div>
               <div className="text-[10px] text-gray-400">F (g)</div>
-              {pfcRatio && <div className="text-[9px] text-gray-300">{pfcRatio.f}% (理想20-30%)</div>}
             </div>
           </div>
         </div>
@@ -465,19 +452,19 @@ export default function RecordsView() {
       <div className="flex gap-2">
         <button
           onClick={() => setAddType("meal")}
-          className="flex-1 py-2.5 rounded-xl bg-green-500 text-white text-sm font-medium active:bg-green-600"
+          className="flex-1 py-2 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium active:bg-gray-50"
         >
           + 食事
         </button>
         <button
           onClick={() => setAddType("exercise")}
-          className="flex-1 py-2.5 rounded-xl bg-orange-500 text-white text-sm font-medium active:bg-orange-600"
+          className="flex-1 py-2 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium active:bg-gray-50"
         >
           + 運動
         </button>
         <button
           onClick={() => setAddType("weight")}
-          className="flex-1 py-2.5 rounded-xl bg-blue-500 text-white text-sm font-medium active:bg-blue-600"
+          className="flex-1 py-2 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium active:bg-gray-50"
         >
           + 体重
         </button>

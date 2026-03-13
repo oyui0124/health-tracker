@@ -44,6 +44,7 @@ export default function StatsView() {
   const [data, setData] = useState<SummaryData | null>(null);
   const [range, setRange] = useState(7);
   const [loading, setLoading] = useState(true);
+  const [showDetail, setShowDetail] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -78,7 +79,6 @@ export default function StatsView() {
       calories: stats.calories,
       burned: stats.burned,
       net: stats.calories - stats.burned,
-      weight: stats.weight,
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
@@ -86,10 +86,6 @@ export default function StatsView() {
     date: w.date.slice(5),
     weight: w.weight,
   }));
-
-  const todayKey = new Date().toISOString().split("T")[0];
-  const today = data.dailyStats[todayKey];
-  const goalCalorie = data.goal?.daily_calorie_target || 2000;
 
   // BMR計算
   const latestWeight = data.weights.length
@@ -105,17 +101,12 @@ export default function StatsView() {
         )
       : null;
 
-  // PFC計算
-  const pfcTotal = today
-    ? (today.protein || 0) * 4 + (today.carbs || 0) * 4 + (today.fat || 0) * 9
-    : 0;
-  const pfcRatio = today && pfcTotal > 0
-    ? {
-        protein: Math.round(((today.protein || 0) * 4 / pfcTotal) * 100),
-        carbs: Math.round(((today.carbs || 0) * 4 / pfcTotal) * 100),
-        fat: Math.round(((today.fat || 0) * 9 / pfcTotal) * 100),
-      }
-    : null;
+  // 期間の平均カロリー
+  const days = Object.keys(data.dailyStats).length;
+  const totalCal = Object.values(data.dailyStats).reduce((s, d) => s + d.calories, 0);
+  const totalBurned = Object.values(data.dailyStats).reduce((s, d) => s + d.burned, 0);
+  const avgCalories = days > 0 ? Math.round(totalCal / days) : 0;
+  const avgBurned = days > 0 ? Math.round(totalBurned / days) : 0;
 
   return (
     <div className="h-full overflow-y-auto no-scrollbar px-4 py-4 space-y-5">
@@ -164,128 +155,91 @@ export default function StatsView() {
         </div>
       )}
 
-      {/* 今日のサマリー */}
-      {today && (
+      {/* 期間の平均 */}
+      {days > 0 && (
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
           <h3 className="text-sm font-semibold text-gray-500 mb-3">
-            今日のサマリー
+            {range}日間の平均
           </h3>
           <div className="grid grid-cols-3 gap-3 text-center">
             <div>
-              <div className="text-2xl font-bold text-green-600">
-                {today.calories}
-              </div>
-              <div className="text-xs text-gray-400">摂取 kcal</div>
+              <div className="text-xl font-bold text-green-600">{avgCalories}</div>
+              <div className="text-xs text-gray-400">摂取 kcal/日</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-orange-500">
-                {today.burned}
-              </div>
-              <div className="text-xs text-gray-400">消費 kcal</div>
+              <div className="text-xl font-bold text-orange-500">{avgBurned}</div>
+              <div className="text-xs text-gray-400">消費 kcal/日</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-blue-500">
-                {today.calories - today.burned}
-              </div>
-              <div className="text-xs text-gray-400">正味 kcal</div>
+              <div className="text-xl font-bold text-blue-500">{avgCalories - avgBurned}</div>
+              <div className="text-xs text-gray-400">正味 kcal/日</div>
             </div>
           </div>
-
-          {/* カロリーバー */}
-          <div className="mt-3">
-            <div className="flex justify-between text-xs text-gray-400 mb-1">
-              <span>目標: {goalCalorie} kcal</span>
-              <span>
-                残り: {Math.max(0, goalCalorie - today.calories + today.burned)} kcal
-              </span>
-            </div>
-            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all ${
-                  today.calories - today.burned > goalCalorie
-                    ? "bg-red-400"
-                    : "bg-green-400"
-                }`}
-                style={{
-                  width: `${Math.min(100, ((today.calories - today.burned) / goalCalorie) * 100)}%`,
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* PFCバランス */}
-      {today && (today.protein > 0 || today.carbs > 0 || today.fat > 0) && (
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-500 mb-3">
-            今日のPFCバランス
-          </h3>
-
-          {/* PFCバー */}
-          {pfcRatio && (
-            <div className="mb-3">
-              <div className="flex h-4 rounded-full overflow-hidden">
-                <div
-                  className="bg-purple-500"
-                  style={{ width: `${pfcRatio.protein}%` }}
-                />
-                <div
-                  className="bg-yellow-400"
-                  style={{ width: `${pfcRatio.carbs}%` }}
-                />
-                <div
-                  className="bg-red-400"
-                  style={{ width: `${pfcRatio.fat}%` }}
-                />
-              </div>
-              <div className="flex justify-between mt-1 text-[10px] text-gray-400">
-                <span>P: {pfcRatio.protein}%</span>
-                <span>C: {pfcRatio.carbs}%</span>
-                <span>F: {pfcRatio.fat}%</span>
-              </div>
+          {data.goal && (
+            <div className="mt-2 text-xs text-center text-gray-400">
+              目標 {data.goal.daily_calorie_target} kcal/日 → 平均{" "}
+              {avgCalories - avgBurned > data.goal.daily_calorie_target
+                ? `${avgCalories - avgBurned - data.goal.daily_calorie_target} kcal 超過`
+                : `${data.goal.daily_calorie_target - avgCalories + avgBurned} kcal 余裕`}
             </div>
           )}
-
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div>
-              <div className="text-lg font-bold text-purple-500">
-                {Math.round(today.protein)}g
-              </div>
-              <div className="text-xs text-gray-400">タンパク質</div>
-            </div>
-            <div>
-              <div className="text-lg font-bold text-yellow-500">
-                {Math.round(today.carbs)}g
-              </div>
-              <div className="text-xs text-gray-400">炭水化物</div>
-            </div>
-            <div>
-              <div className="text-lg font-bold text-red-400">
-                {Math.round(today.fat)}g
-              </div>
-              <div className="text-xs text-gray-400">脂質</div>
-            </div>
-          </div>
         </div>
       )}
 
       {/* カロリー推移グラフ */}
       <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-        <h3 className="text-sm font-semibold text-gray-500 mb-3">
-          カロリー推移
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-500">
+            カロリー推移
+          </h3>
+          <button
+            onClick={() => setShowDetail(!showDetail)}
+            className="text-xs text-gray-400 border border-gray-200 rounded-full px-3 py-1 active:bg-gray-50"
+          >
+            {showDetail ? "正味のみ" : "内訳を見る"}
+          </button>
+        </div>
         {chartData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip />
-              <Bar dataKey="calories" fill="#22c55e" name="摂取" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="burned" fill="#f97316" name="消費" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          showDetail ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Bar dataKey="calories" fill="#22c55e" name="摂取" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="burned" fill="#f97316" name="消費" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Line
+                  type="monotone"
+                  dataKey="net"
+                  stroke="#22c55e"
+                  strokeWidth={2}
+                  dot={{ fill: "#22c55e", r: 3 }}
+                  name="正味 kcal"
+                />
+                {data.goal && (
+                  <Line
+                    type="monotone"
+                    dataKey={() => data.goal!.daily_calorie_target}
+                    stroke="#ef4444"
+                    strokeDasharray="5 5"
+                    strokeWidth={1}
+                    dot={false}
+                    name="目標"
+                  />
+                )}
+              </LineChart>
+            </ResponsiveContainer>
+          )
         ) : (
           <p className="text-center text-gray-400 py-8">データがありません</p>
         )}

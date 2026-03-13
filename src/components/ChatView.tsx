@@ -176,7 +176,7 @@ export default function ChatView() {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="border-t border-gray-200 bg-white px-4 py-2 pb-[env(safe-area-inset-bottom,8px)]">
+      <div className="border-t border-gray-200 bg-white px-4 py-3 pb-[max(env(safe-area-inset-bottom,12px),12px)]">
         {/* テンプレートボタン */}
         <div className="flex gap-2 mb-2 overflow-x-auto no-scrollbar">
           {[
@@ -185,8 +185,8 @@ export default function ChatView() {
             { label: "夕食", text: "夜ご飯に" },
             { label: "間食", text: "間食で" },
             { label: "体重", text: "体重 " },
-            { label: "運動", text: "分 歩いた" },
-            { label: "今日の状況", text: "今日の摂取状況を教えて" },
+            { label: "運動", text: "cal消費した、" },
+            { label: "まとめて報告", text: "朝ごはん：、昼ごはん：、夜ごはん：、体重：kg、運動：" },
             { label: "修正", text: "さっきの記録を修正して、" },
           ].map((t) => (
             <button
