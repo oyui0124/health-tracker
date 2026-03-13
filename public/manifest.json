@@ -1,0 +1,21 @@
+{
+  "name": "Health Tracker",
+  "short_name": "Health",
+  "description": "毎日の食事・体重・運動を記録して健康管理",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8faf8",
+  "theme_color": "#22c55e",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
