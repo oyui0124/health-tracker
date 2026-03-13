@@ -27,6 +27,14 @@ type Weight = {
   weight: number;
 };
 
+type Goal = {
+  target_weight: number;
+  daily_calorie_target: number;
+  height_cm?: number;
+  birth_date?: string;
+  gender?: "male" | "female";
+};
+
 type EditTarget =
   | { type: "meal"; data: Meal }
   | { type: "exercise"; data: Exercise }
@@ -39,7 +47,6 @@ const MEAL_TYPE_LABEL: Record<string, string> = {
   snack: "間食",
 };
 
-// ローカルタイムでYYYY-MM-DD
 function getLocalDate(d: Date = new Date()): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -47,11 +54,79 @@ function getLocalDate(d: Date = new Date()): string {
   return `${y}-${m}-${day}`;
 }
 
+function getAdvice(
+  totalCalories: number,
+  totalBurned: number,
+  totalProtein: number,
+  totalCarbs: number,
+  totalFat: number,
+  goal: Goal | null,
+  hour: number
+): string[] {
+  const tips: string[] = [];
+  if (!goal) {
+    tips.push("目標設定をすると、より的確なアドバイスができます！");
+    return tips;
+  }
+
+  const net = totalCalories - totalBurned;
+  const target = goal.daily_calorie_target;
+  const remaining = target - net;
+
+  // 時間帯による進捗チェック
+  if (hour < 12) {
+    if (totalCalories === 0) {
+      tips.push("朝ごはんはまだですか？1日のエネルギー補給に大切です");
+    }
+  } else if (hour < 18) {
+    const expectedRatio = 0.65; // 夕方までに65%くらい
+    if (net < target * expectedRatio * 0.5) {
+      tips.push("摂取が少なめです。無理な制限は逆効果になることも");
+    } else if (net > target * 0.85) {
+      tips.push("夕食はカロリー控えめにするといいかも");
+    }
+  } else {
+    if (remaining > 0) {
+      tips.push(`あと ${Math.round(remaining)} kcal 食べられます`);
+    } else {
+      tips.push(
+        `目標を ${Math.round(Math.abs(remaining))} kcal オーバー中。明日で調整しましょう`
+      );
+    }
+  }
+
+  // PFCバランスチェック
+  const pfcTotal =
+    (totalProtein || 0) * 4 + (totalCarbs || 0) * 4 + (totalFat || 0) * 9;
+  if (pfcTotal > 0) {
+    const pRatio = ((totalProtein * 4) / pfcTotal) * 100;
+    const fRatio = ((totalFat * 9) / pfcTotal) * 100;
+    if (pRatio < 13 && totalCalories > 300) {
+      tips.push("タンパク質が少なめ。肉・魚・卵・大豆で補いましょう");
+    }
+    if (fRatio > 35 && totalCalories > 300) {
+      tips.push("脂質が多め。揚げ物を控えるとバランス改善");
+    }
+  }
+
+  // 運動
+  if (totalBurned === 0 && hour >= 15) {
+    tips.push("今日はまだ運動の記録がありません。軽い散歩でもOK！");
+  }
+
+  if (tips.length === 0) {
+    tips.push("いい感じです！この調子で続けましょう");
+  }
+
+  return tips;
+}
+
 export default function RecordsView() {
   const [date, setDate] = useState(getLocalDate());
   const [meals, setMeals] = useState<Meal[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [weights, setWeights] = useState<Weight[]>([]);
+  const [goal, setGoal] = useState<Goal | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
@@ -72,6 +147,16 @@ export default function RecordsView() {
   useEffect(() => {
     fetchRecords();
   }, [fetchRecords]);
+
+  // 目標を取得
+  useEffect(() => {
+    fetch("/api/goals")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.goal) setGoal(d.goal);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleDelete = async (type: string, id: string) => {
     if (deleting) return;
@@ -115,6 +200,21 @@ export default function RecordsView() {
     (s, e) => s + (e.calories_burned || 0),
     0
   );
+  const totalProtein = meals.reduce((s, m) => s + (m.protein || 0), 0);
+  const totalCarbs = meals.reduce((s, m) => s + (m.carbs || 0), 0);
+  const totalFat = meals.reduce((s, m) => s + (m.fat || 0), 0);
+
+  const adviceTips = isToday
+    ? getAdvice(
+        totalCalories,
+        totalBurned,
+        totalProtein,
+        totalCarbs,
+        totalFat,
+        goal,
+        new Date().getHours()
+      )
+    : [];
 
   if (loading) {
     return (
@@ -172,6 +272,57 @@ export default function RecordsView() {
           <div className="text-[10px] text-gray-400">正味 kcal</div>
         </div>
       </div>
+
+      {/* 目標プログレスバー */}
+      {goal && (
+        <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+          <div className="flex justify-between text-xs text-gray-400 mb-1">
+            <span>目標: {goal.daily_calorie_target} kcal</span>
+            <span>
+              残り:{" "}
+              {Math.max(
+                0,
+                goal.daily_calorie_target - totalCalories + totalBurned
+              )}{" "}
+              kcal
+            </span>
+          </div>
+          <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${
+                totalCalories - totalBurned > goal.daily_calorie_target
+                  ? "bg-red-400"
+                  : "bg-green-400"
+              }`}
+              style={{
+                width: `${Math.min(
+                  100,
+                  ((totalCalories - totalBurned) /
+                    goal.daily_calorie_target) *
+                    100
+                )}%`,
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* アドバイス（今日のみ） */}
+      {isToday && adviceTips.length > 0 && (
+        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-3 border border-yellow-100">
+          <div className="text-xs font-semibold text-orange-600 mb-1.5">
+            今日のアドバイス
+          </div>
+          <div className="space-y-1">
+            {adviceTips.map((tip, i) => (
+              <div key={i} className="text-sm text-gray-700 flex gap-1.5">
+                <span className="shrink-0">-</span>
+                <span>{tip}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 食事一覧 */}
       <div>
@@ -335,7 +486,11 @@ function EditModal({
   onClose,
 }: {
   target: EditTarget;
-  onSave: (type: string, id: string, updates: Record<string, unknown>) => void;
+  onSave: (
+    type: string,
+    id: string,
+    updates: Record<string, unknown>
+  ) => void;
   onClose: () => void;
 }) {
   const [form, setForm] = useState<Record<string, string>>({});
@@ -344,6 +499,7 @@ function EditModal({
     if (target.type === "meal") {
       const m = target.data;
       setForm({
+        date: m.date,
         description: m.description,
         calories: String(m.calories),
         protein: String(m.protein || 0),
@@ -354,18 +510,23 @@ function EditModal({
     } else if (target.type === "exercise") {
       const e = target.data;
       setForm({
+        date: e.date,
         description: e.description,
         calories_burned: String(e.calories_burned),
         duration_minutes: String(e.duration_minutes),
       });
     } else {
-      setForm({ weight: String(target.data.weight) });
+      setForm({
+        date: target.data.date,
+        weight: String(target.data.weight),
+      });
     }
   }, [target]);
 
   const handleSubmit = () => {
     if (target.type === "meal") {
       onSave(target.type, target.data.id, {
+        date: form.date,
         description: form.description,
         calories: parseInt(form.calories) || 0,
         protein: parseInt(form.protein) || 0,
@@ -375,12 +536,14 @@ function EditModal({
       });
     } else if (target.type === "exercise") {
       onSave(target.type, target.data.id, {
+        date: form.date,
         description: form.description,
         calories_burned: parseInt(form.calories_burned) || 0,
         duration_minutes: parseInt(form.duration_minutes) || 0,
       });
     } else {
       onSave(target.type, target.data.id, {
+        date: form.date,
         weight: parseFloat(form.weight) || 0,
       });
     }
@@ -391,7 +554,7 @@ function EditModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl p-5 mx-4 w-full max-w-sm shadow-xl">
+      <div className="bg-white rounded-2xl p-5 mx-4 w-full max-w-sm shadow-xl max-h-[90vh] overflow-y-auto">
         <h2 className="text-base font-bold mb-4">
           {target.type === "meal"
             ? "食事を編集"
@@ -401,6 +564,19 @@ function EditModal({
         </h2>
 
         <div className="space-y-3">
+          {/* 日付（全タイプ共通） */}
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">日付</label>
+            <input
+              type="date"
+              value={form.date || ""}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, date: e.target.value }))
+              }
+              className={inputClass}
+            />
+          </div>
+
           {target.type === "meal" && (
             <>
               <div>
