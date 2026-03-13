@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getSupabase } from "@/lib/supabase";
 
-function getAnthropic() {
-  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+function getGemini() {
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+  return genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 }
 
 const SYSTEM_PROMPT = `あなたは優しくて知識豊富なパーソナル健康管理アシスタントです。
@@ -16,8 +17,6 @@ const SYSTEM_PROMPT = `あなたは優しくて知識豊富なパーソナル健
 4. 目標に対するアドバイスを返す
 
 ## 応答フォーマット
-必ず以下のJSON部分とメッセージ部分を両方含めてください。
-
 データを記録する場合は、メッセージの最初に以下のJSONブロックを含めてください：
 \`\`\`json
 {
@@ -231,38 +230,31 @@ export async function POST(req: NextRequest) {
       getRecentHistory(),
     ]);
 
-    // 直近のチャット履歴を取得（今回のメッセージ保存前）
+    // 直近のチャット履歴を取得
     const { data: chatHistory } = await db
       .from("chat_messages")
       .select("role, content")
       .order("created_at", { ascending: false })
       .limit(20);
 
-    const messages = [
-      ...(chatHistory || [])
-        .reverse()
-        .map((m: { role: string; content: string }) => ({
-          role: m.role as "user" | "assistant",
-          content: m.content,
-        })),
-      {
-        role: "user" as const,
-        content: message,
-      },
-    ];
+    // Gemini用の履歴を構築
+    const history = (chatHistory || [])
+      .reverse()
+      .map((m: { role: string; content: string }) => ({
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: m.content }],
+      }));
 
-    const anthropic = getAnthropic();
-    const response = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 1024,
-      system: `${SYSTEM_PROMPT}\n\n${todaySummary}\n${recentHistory}`,
-      messages,
+    const model = getGemini();
+    const chat = model.startChat({
+      history,
+      systemInstruction: `${SYSTEM_PROMPT}\n\n${todaySummary}\n${recentHistory}`,
     });
 
-    const assistantMessage =
-      response.content[0].type === "text" ? response.content[0].text : "";
+    const result = await chat.sendMessage(message);
+    const assistantMessage = result.response.text();
 
-    // エ��トリを解析して保存
+    // エントリを解析して保存
     const parsed = parseEntries(assistantMessage);
     if (parsed?.entries) {
       await saveEntries(parsed);
