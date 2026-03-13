@@ -11,7 +11,10 @@ function getGroq() {
 }
 
 function getToday() {
-  return new Date().toISOString().split("T")[0];
+  const now = new Date();
+  // JSTで日付を取得（Vercelサーバーのタイムゾーンに依存しないように）
+  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  return jst.toISOString().split("T")[0];
 }
 
 const SYSTEM_PROMPT = `あなたは優しくて知識豊富なパーソナル健康管理アシスタントです。
