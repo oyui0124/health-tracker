@@ -7,18 +7,74 @@ type Message = {
   content: string;
 };
 
+const STORAGE_KEY = "health-tracker-chat";
+const GREETING: Message = {
+  role: "assistant",
+  content:
+    "こんにちは！健康管理アシスタントです。\n\n食べたもの、体重、運動を教えてください。例えば：\n\n・「朝ごはんにトースト1枚とコーヒー」\n・「体重 65.2kg」\n・「30分ジョギングした」\n\n目標を設定したい場合は「目標体重60kg、1日1800kcal」のように教えてくださいね！",
+};
+
+function loadCachedMessages(): Message[] {
+  if (typeof window === "undefined") return [GREETING];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [GREETING];
+    const { messages, timestamp } = JSON.parse(raw);
+    // 3時間以内なら復元
+    if (Date.now() - timestamp < 3 * 60 * 60 * 1000 && messages?.length > 0) {
+      return messages;
+    }
+  } catch {}
+  return [GREETING];
+}
+
+function saveCachedMessages(messages: Message[]) {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ messages, timestamp: Date.now() })
+    );
+  } catch {}
+}
+
 export default function ChatView() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content:
-        "こんにちは！健康管理アシスタントです。\n\n食べたもの、体重、運動を教えてください。例えば：\n\n・「朝ごはんにトースト1枚とコーヒー」\n・「体重 65.2kg」\n・「30分ジョギングした」\n\n目標を設定したい場合は「目標体重60kg、1日1800kcal」のように教えてくださいね！",
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>(() =>
+    loadCachedMessages()
+  );
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // DBからチャット履歴を読み込み（初回のみ、キャッシュがなければ）
+  useEffect(() => {
+    if (historyLoaded) return;
+    const cached = loadCachedMessages();
+    // キャッシュに挨拶しかない場合はDBから読む
+    if (cached.length <= 1) {
+      fetch("/api/chat-history")
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.messages?.length > 0) {
+            const restored = [GREETING, ...d.messages];
+            setMessages(restored);
+            saveCachedMessages(restored);
+          }
+        })
+        .catch(() => {})
+        .finally(() => setHistoryLoaded(true));
+    } else {
+      setHistoryLoaded(true);
+    }
+  }, [historyLoaded]);
+
+  // メッセージ変更時にlocalStorageに保存
+  useEffect(() => {
+    if (messages.length > 1) {
+      saveCachedMessages(messages);
+    }
+  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -37,7 +93,6 @@ export default function ChatView() {
     setInput("");
     setIsLoading(true);
 
-    // テキストエリアの高さをリセット
     if (inputRef.current) {
       inputRef.current.style.height = "auto";
     }
@@ -76,7 +131,6 @@ export default function ChatView() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // PCのみ: Ctrl+Enter or Cmd+Enter で送信（スマホではボタンのみ）
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       sendMessage();
@@ -85,14 +139,12 @@ export default function ChatView() {
 
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
-    // 自動リサイズ
     e.target.style.height = "auto";
     e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
   };
 
   return (
     <div className="flex flex-col h-full">
-      {/* メッセージ一覧 */}
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-3 space-y-3">
         {messages.map((msg, i) => (
           <div
@@ -124,7 +176,6 @@ export default function ChatView() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 入力エリア */}
       <div className="border-t border-gray-200 bg-white px-4 py-3 pb-[env(safe-area-inset-bottom,12px)]">
         <div className="flex items-end gap-2">
           <textarea

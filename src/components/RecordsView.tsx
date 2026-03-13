@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { calculateBMR, getAge } from "@/lib/bmr";
 
 type Meal = {
   id: string;
@@ -54,18 +55,19 @@ function getLocalDate(d: Date = new Date()): string {
   return `${y}-${m}-${day}`;
 }
 
-function getAdvice(
+function getDetailedAdvice(
   totalCalories: number,
   totalBurned: number,
   totalProtein: number,
   totalCarbs: number,
   totalFat: number,
   goal: Goal | null,
+  latestWeight: number | null,
   hour: number
 ): string[] {
   const tips: string[] = [];
   if (!goal) {
-    tips.push("目標設定をすると、より的確なアドバイスができます！");
+    tips.push("右上の「目標設定」からカロリー目標・体重目標・プロフィールを設定してください");
     return tips;
   }
 
@@ -73,49 +75,102 @@ function getAdvice(
   const target = goal.daily_calorie_target;
   const remaining = target - net;
 
-  // 時間帯による進捗チェック
+  // BMR計算
+  let bmr: number | null = null;
+  if (goal.height_cm && goal.birth_date && goal.gender && latestWeight) {
+    bmr = calculateBMR(
+      latestWeight,
+      goal.height_cm,
+      getAge(goal.birth_date),
+      goal.gender
+    );
+  }
+
+  // --- カロリー目標への進捗 ---
+  const progress = target > 0 ? Math.round((net / target) * 100) : 0;
   if (hour < 12) {
     if (totalCalories === 0) {
-      tips.push("朝ごはんはまだですか？1日のエネルギー補給に大切です");
+      tips.push("朝食がまだです。朝食を食べると代謝が上がり、1日のエネルギー効率がUPします");
+    } else {
+      tips.push(`午前中で ${progress}% 消化。ペース的に良い感じです`);
     }
-  } else if (hour < 18) {
-    const expectedRatio = 0.65; // 夕方までに65%くらい
-    if (net < target * expectedRatio * 0.5) {
-      tips.push("摂取が少なめです。無理な制限は逆効果になることも");
-    } else if (net > target * 0.85) {
-      tips.push("夕食はカロリー控えめにするといいかも");
+  } else if (hour < 15) {
+    if (progress < 30) {
+      tips.push(`まだ目標の ${progress}% です。昼食でしっかり栄養を摂りましょう`);
+    } else if (progress > 70) {
+      tips.push(`すでに目標の ${progress}%。夕食は軽めがおすすめです`);
+    } else {
+      tips.push(`目標の ${progress}%。いいペースです`);
+    }
+  } else if (hour < 20) {
+    if (remaining > 0) {
+      tips.push(`夕食で あと ${Math.round(remaining)} kcal 食べられます`);
+    } else {
+      tips.push(`目標を ${Math.round(Math.abs(remaining))} kcal 超過中。夕食は控えめに`);
     }
   } else {
-    if (remaining > 0) {
-      tips.push(`あと ${Math.round(remaining)} kcal 食べられます`);
+    if (remaining > 300) {
+      tips.push(`${Math.round(remaining)} kcal 余っています。食べ足りない場合は無理せず軽食をどうぞ`);
+    } else if (remaining > 0) {
+      tips.push(`目標まであと ${Math.round(remaining)} kcal。ほぼ達成です！`);
+    } else if (Math.abs(remaining) < 200) {
+      tips.push(`${Math.round(Math.abs(remaining))} kcal の微超過。許容範囲です`);
     } else {
-      tips.push(
-        `目標を ${Math.round(Math.abs(remaining))} kcal オーバー中。明日で調整しましょう`
-      );
+      tips.push(`${Math.round(Math.abs(remaining))} kcal オーバー。明日はその分控えめにすれば大丈夫`);
     }
   }
 
-  // PFCバランスチェック
+  // --- BMRチェック ---
+  if (bmr && totalCalories > 0 && totalCalories < bmr * 0.8) {
+    tips.push(
+      `基礎代謝 ${bmr} kcal を大きく下回っています（現在 ${totalCalories} kcal）。健康のため最低でも基礎代謝分は摂りましょう`
+    );
+  }
+
+  // --- PFCバランス ---
   const pfcTotal =
     (totalProtein || 0) * 4 + (totalCarbs || 0) * 4 + (totalFat || 0) * 9;
-  if (pfcTotal > 0) {
-    const pRatio = ((totalProtein * 4) / pfcTotal) * 100;
-    const fRatio = ((totalFat * 9) / pfcTotal) * 100;
-    if (pRatio < 13 && totalCalories > 300) {
-      tips.push("タンパク質が少なめ。肉・魚・卵・大豆で補いましょう");
-    }
-    if (fRatio > 35 && totalCalories > 300) {
-      tips.push("脂質が多め。揚げ物を控えるとバランス改善");
+  if (pfcTotal > 0 && totalCalories > 300) {
+    const pRatio = Math.round(((totalProtein * 4) / pfcTotal) * 100);
+    const fRatio = Math.round(((totalFat * 9) / pfcTotal) * 100);
+    const cRatio = Math.round(((totalCarbs * 4) / pfcTotal) * 100);
+
+    const pfcParts: string[] = [];
+    if (pRatio < 15) pfcParts.push(`P ${pRatio}%（理想15-20%）→ 肉・魚・卵・豆腐を追加`);
+    else if (pRatio > 25) pfcParts.push(`P ${pRatio}%（理想15-20%）→ タンパク質やや多め`);
+
+    if (fRatio > 30) pfcParts.push(`F ${fRatio}%（理想20-30%）→ 揚げ物・脂身を控えて`);
+    else if (fRatio < 15) pfcParts.push(`F ${fRatio}%（理想20-30%）→ 良質な脂質（魚・ナッツ）を`);
+
+    if (cRatio > 65) pfcParts.push(`C ${cRatio}%（理想50-65%）→ 糖質がやや多め`);
+    else if (cRatio < 40) pfcParts.push(`C ${cRatio}%（理想50-65%）→ ご飯・パンが少なめ`);
+
+    if (pfcParts.length > 0) {
+      tips.push(`PFCバランス: ${pfcParts.join("、")}`);
+    } else {
+      tips.push(`PFCバランスは理想的です（P:${pRatio}% F:${fRatio}% C:${cRatio}%）`);
     }
   }
 
-  // 運動
-  if (totalBurned === 0 && hour >= 15) {
-    tips.push("今日はまだ運動の記録がありません。軽い散歩でもOK！");
+  // --- 目標体重への進捗 ---
+  if (latestWeight && goal.target_weight) {
+    const diff = latestWeight - goal.target_weight;
+    if (diff > 0) {
+      tips.push(
+        `目標体重まで あと ${diff.toFixed(1)} kg。週0.5kgペースなら約${Math.ceil(diff / 0.5)}週間で達成可能`
+      );
+    } else if (diff < -1) {
+      tips.push(`目標体重を ${Math.abs(diff).toFixed(1)} kg 下回っています。目標の見直しも検討を`);
+    } else {
+      tips.push("目標体重圏内です！この体重をキープしましょう");
+    }
   }
 
-  if (tips.length === 0) {
-    tips.push("いい感じです！この調子で続けましょう");
+  // --- 運動 ---
+  if (totalBurned === 0 && hour >= 14) {
+    tips.push("今日はまだ運動記録がありません。20分のウォーキングで約80kcal消費できます");
+  } else if (totalBurned > 0) {
+    tips.push(`運動で ${totalBurned} kcal 消費済み。いい調子です！`);
   }
 
   return tips;
@@ -123,10 +178,12 @@ function getAdvice(
 
 export default function RecordsView() {
   const [date, setDate] = useState(getLocalDate());
+  const [showCalendar, setShowCalendar] = useState(false);
   const [meals, setMeals] = useState<Meal[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [weights, setWeights] = useState<Weight[]>([]);
   const [goal, setGoal] = useState<Goal | null>(null);
+  const [latestWeight, setLatestWeight] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
@@ -148,12 +205,20 @@ export default function RecordsView() {
     fetchRecords();
   }, [fetchRecords]);
 
-  // 目標を取得
+  // 目標と最新体重を取得
   useEffect(() => {
     fetch("/api/goals")
       .then((r) => r.json())
       .then((d) => {
         if (d.goal) setGoal(d.goal);
+      })
+      .catch(() => {});
+    fetch("/api/summary?range=30")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.weights?.length > 0) {
+          setLatestWeight(d.weights[d.weights.length - 1].weight);
+        }
       })
       .catch(() => {});
   }, []);
@@ -205,13 +270,14 @@ export default function RecordsView() {
   const totalFat = meals.reduce((s, m) => s + (m.fat || 0), 0);
 
   const adviceTips = isToday
-    ? getAdvice(
+    ? getDetailedAdvice(
         totalCalories,
         totalBurned,
         totalProtein,
         totalCarbs,
         totalFat,
         goal,
+        latestWeight,
         new Date().getHours()
       )
     : [];
@@ -226,29 +292,59 @@ export default function RecordsView() {
 
   return (
     <div className="h-full overflow-y-auto no-scrollbar px-4 py-4 space-y-4">
-      {/* 日付ナビゲーション */}
-      <div className="flex items-center justify-between bg-white rounded-2xl p-3 shadow-sm border border-gray-100">
-        <button
-          onClick={() => changeDate(-1)}
-          className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 active:bg-gray-200"
-        >
-          &lt;
-        </button>
-        <div className="text-center">
-          <div className="text-lg font-bold text-gray-800">
-            {date.slice(5).replace("-", "/")}
-          </div>
-          {isToday && (
-            <div className="text-xs text-green-500 font-medium">今日</div>
-          )}
+      {/* 日付ナビゲーション + カレンダー */}
+      <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => changeDate(-1)}
+            className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 active:bg-gray-200 text-lg font-bold"
+          >
+            &lt;
+          </button>
+          <button
+            onClick={() => setShowCalendar(!showCalendar)}
+            className="text-center active:opacity-60"
+          >
+            <div className="text-lg font-bold text-gray-800">
+              {date.slice(5).replace("-", "/")}
+            </div>
+            {isToday ? (
+              <div className="text-xs text-green-500 font-medium">今日</div>
+            ) : (
+              <div className="text-[10px] text-gray-400">タップで日付選択</div>
+            )}
+          </button>
+          <button
+            onClick={() => changeDate(1)}
+            disabled={isToday}
+            className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 active:bg-gray-200 text-lg font-bold disabled:opacity-30"
+          >
+            &gt;
+          </button>
         </div>
-        <button
-          onClick={() => changeDate(1)}
-          disabled={isToday}
-          className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 active:bg-gray-200 disabled:opacity-30"
-        >
-          &gt;
-        </button>
+        {showCalendar && (
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <input
+              type="date"
+              value={date}
+              max={getLocalDate()}
+              onChange={(e) => {
+                setDate(e.target.value);
+                setShowCalendar(false);
+              }}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:border-green-500"
+            />
+            <button
+              onClick={() => {
+                setDate(getLocalDate());
+                setShowCalendar(false);
+              }}
+              className="w-full mt-2 py-2 text-sm text-green-600 font-medium active:bg-green-50 rounded-lg"
+            >
+              今日に戻る
+            </button>
+          </div>
+        )}
       </div>
 
       {/* サマリー */}
@@ -309,14 +405,14 @@ export default function RecordsView() {
 
       {/* アドバイス（今日のみ） */}
       {isToday && adviceTips.length > 0 && (
-        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-3 border border-yellow-100">
-          <div className="text-xs font-semibold text-orange-600 mb-1.5">
+        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-100">
+          <div className="text-xs font-bold text-orange-600 mb-2">
             今日のアドバイス
           </div>
-          <div className="space-y-1">
+          <div className="space-y-2">
             {adviceTips.map((tip, i) => (
-              <div key={i} className="text-sm text-gray-700 flex gap-1.5">
-                <span className="shrink-0">-</span>
+              <div key={i} className="text-[13px] text-gray-700 flex gap-2">
+                <span className="shrink-0 text-orange-400">-</span>
                 <span>{tip}</span>
               </div>
             ))}
@@ -357,19 +453,19 @@ export default function RecordsView() {
                       <span>C:{m.carbs || 0}g</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 ml-2 shrink-0">
+                  <div className="flex items-center gap-2 ml-2 shrink-0">
                     <button
                       onClick={() =>
                         setEditTarget({ type: "meal", data: { ...m } })
                       }
-                      className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 active:bg-gray-200 text-sm"
+                      className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500 active:bg-blue-100 text-base font-bold"
                     >
                       ✎
                     </button>
                     <button
                       onClick={() => handleDelete("meal", m.id)}
                       disabled={deleting === m.id}
-                      className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-red-300 active:bg-red-50 active:text-red-500 text-sm"
+                      className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center text-red-500 active:bg-red-100 text-base font-bold"
                     >
                       {deleting === m.id ? "…" : "✕"}
                     </button>
@@ -407,19 +503,19 @@ export default function RecordsView() {
                       <span>{e.duration_minutes}分</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 ml-2 shrink-0">
+                  <div className="flex items-center gap-2 ml-2 shrink-0">
                     <button
                       onClick={() =>
                         setEditTarget({ type: "exercise", data: { ...e } })
                       }
-                      className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 active:bg-gray-200 text-sm"
+                      className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500 active:bg-blue-100 text-base font-bold"
                     >
                       ✎
                     </button>
                     <button
                       onClick={() => handleDelete("exercise", e.id)}
                       disabled={deleting === e.id}
-                      className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-red-300 active:bg-red-50 active:text-red-500 text-sm"
+                      className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center text-red-500 active:bg-red-100 text-base font-bold"
                     >
                       {deleting === e.id ? "…" : "✕"}
                     </button>
@@ -443,19 +539,19 @@ export default function RecordsView() {
               <span className="text-lg font-bold text-blue-500">
                 {w.weight} kg
               </span>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() =>
                     setEditTarget({ type: "weight", data: { ...w } })
                   }
-                  className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 active:bg-gray-200 text-sm"
+                  className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500 active:bg-blue-100 text-base font-bold"
                 >
                   ✎
                 </button>
                 <button
                   onClick={() => handleDelete("weight", w.id)}
                   disabled={deleting === w.id}
-                  className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-red-300 active:bg-red-50 active:text-red-500 text-sm"
+                  className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center text-red-500 active:bg-red-100 text-base font-bold"
                 >
                   {deleting === w.id ? "…" : "✕"}
                 </button>
@@ -550,7 +646,7 @@ function EditModal({
   };
 
   const inputClass =
-    "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500";
+    "w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:border-green-500";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -564,7 +660,6 @@ function EditModal({
         </h2>
 
         <div className="space-y-3">
-          {/* 日付（全タイプ共通） */}
           <div>
             <label className="block text-xs text-gray-500 mb-1">日付</label>
             <input
@@ -737,13 +832,13 @@ function EditModal({
         <div className="flex gap-3 mt-5">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg border border-gray-300 text-gray-600 font-medium text-sm"
+            className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-600 font-medium text-base"
           >
             キャンセル
           </button>
           <button
             onClick={handleSubmit}
-            className="flex-1 py-2.5 rounded-lg bg-green-500 text-white font-medium text-sm active:bg-green-600"
+            className="flex-1 py-3 rounded-lg bg-green-500 text-white font-medium text-base active:bg-green-600"
           >
             保存
           </button>
