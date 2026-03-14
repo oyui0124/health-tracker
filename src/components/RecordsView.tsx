@@ -484,15 +484,15 @@ export default function RecordsView() {
         )}
 
         {/* フィルタータブ */}
-        <div className="flex bg-gray-100/80 rounded-2xl p-1">
+        <div className="flex gap-2">
           {([["all", "すべて"], ["meal", "食事"], ["exercise", "運動"]] as const).map(([key, label]) => (
             <button
               key={key}
               onClick={() => setFilter(key)}
-              className={`flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
+              className={`px-4 py-2 rounded-full text-[13px] font-semibold transition-all ${
                 filter === key
-                  ? "bg-white text-green-700 shadow-sm"
-                  : "text-gray-500"
+                  ? "bg-green-500 text-white shadow-sm shadow-green-500/20"
+                  : "bg-white text-gray-500 border border-gray-200"
               }`}
             >
               {label}

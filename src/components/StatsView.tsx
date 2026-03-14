@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import {
-  LineChart,
   Line,
   BarChart,
   Bar,
@@ -11,8 +10,26 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Area,
+  AreaChart,
 } from "recharts";
 import { calculateBMR, getAge } from "@/lib/bmr";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-gray-900/90 backdrop-blur-sm text-white px-3 py-2 rounded-xl text-xs shadow-lg">
+      <div className="font-medium text-gray-300 mb-0.5">{label}</div>
+      {payload.map((p: { name: string; value: number; color: string }, i: number) => (
+        <div key={i} className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full" style={{ background: p.color }} />
+          <span>{p.name}: <span className="font-bold">{p.value}</span></span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 type DailyStats = Record<
   string,
@@ -208,14 +225,12 @@ export default function StatsView() {
         </div>
       )}
 
-      {/* 達成ストリーク */}
+      {/* 達成カレンダー */}
       {data.goal && calendarDays.length > 0 && (() => {
         const actual = calendarDays.filter((d) => !d.blank);
         const goodCount = actual.filter((d) => d.status === "good").length;
-        const overCount = actual.filter((d) => d.status === "over").length;
-        const total = actual.length;
+        const total = actual.filter((d) => d.status !== "nodata").length;
         const rate = total > 0 ? Math.round((goodCount / total) * 100) : 0;
-        // Current streak
         let streak = 0;
         for (let i = actual.length - 1; i >= 0; i--) {
           if (actual[i].status === "good") streak++;
@@ -223,47 +238,51 @@ export default function StatsView() {
         }
         return (
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-semibold text-gray-500">目標達成</h3>
-              <div className="flex items-center gap-3 text-xs text-gray-400">
-                <span>{goodCount}日達成</span>
-                <span>{overCount}日超過</span>
-                <span className="font-semibold text-green-600">{rate}%</span>
+              <div className="flex items-center gap-2 text-xs">
+                {streak > 0 && (
+                  <span className="text-green-600 font-semibold">{streak}日連続</span>
+                )}
+                <span className="text-gray-400">達成率 <span className="font-bold text-green-600">{rate}%</span></span>
               </div>
             </div>
-            {streak > 0 && (
-              <div className="mb-3 text-xs text-green-600 font-medium">
-                {streak}日連続達成中
-              </div>
-            )}
-            {/* コンパクトヒートマップ: 横スクロール */}
-            <div className="overflow-x-auto no-scrollbar -mx-1 px-1">
-              <div className="flex gap-[3px] items-end">
-                {actual.map((day, i) => (
-                  <div key={i} className="flex flex-col items-center gap-0.5">
-                    <div
-                      className={`w-[18px] h-[18px] rounded-[4px] transition-colors ${
-                        day.status === "good"
-                          ? "bg-green-400"
-                          : day.status === "over"
-                            ? "bg-red-300"
-                            : "bg-gray-100"
-                      }`}
-                      title={day.label}
-                    />
-                    {(day.dayNum === 1 || i === 0) && (
-                      <div className="text-[8px] text-gray-400 leading-none mt-0.5">
-                        {day.dayNum}
-                      </div>
-                    )}
-                  </div>
-                ))}
+            {/* コンパクトカレンダー: 中央寄せ、小さめセル */}
+            <div className="flex justify-center">
+              <div>
+                <div className="grid grid-cols-7 gap-1 text-center mb-1">
+                  {["月","火","水","木","金","土","日"].map((d) => (
+                    <div key={d} className="w-7 text-[9px] text-gray-400 font-medium">{d}</div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                  {calendarDays.map((day, i) => (
+                    <div key={i} className="w-7 h-7 flex items-center justify-center">
+                      {day.blank ? (
+                        <div className="w-full h-full" />
+                      ) : (
+                        <div
+                          className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-semibold ${
+                            day.status === "good"
+                              ? "bg-green-500 text-white"
+                              : day.status === "over"
+                                ? "bg-red-400 text-white"
+                                : "bg-gray-100 text-gray-300"
+                          }`}
+                          title={day.label}
+                        >
+                          {day.dayNum}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-            <div className="flex gap-3 mt-2.5 text-[10px] text-gray-400">
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-[3px] bg-green-400 inline-block" /> 達成</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-[3px] bg-red-300 inline-block" /> 超過</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-[3px] bg-gray-100 inline-block" /> 未記録</span>
+            <div className="flex gap-3 mt-2.5 justify-center text-[10px] text-gray-400">
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-green-500 inline-block" /> 達成</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-red-400 inline-block" /> 超過</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-gray-100 inline-block" /> 未記録</span>
             </div>
           </div>
         );
@@ -275,54 +294,55 @@ export default function StatsView() {
           <h3 className="text-sm font-semibold text-gray-500">
             カロリー推移
           </h3>
-          <div className="flex bg-gray-100 rounded-full p-0.5">
-            <button
-              onClick={() => setChartMode("net")}
-              className={`px-3 py-1 rounded-full text-[11px] font-medium transition-colors ${
-                chartMode === "net"
-                  ? "bg-white text-gray-800 shadow-sm"
-                  : "text-gray-400"
-              }`}
-            >
-              実質
-            </button>
-            <button
-              onClick={() => setChartMode("detail")}
-              className={`px-3 py-1 rounded-full text-[11px] font-medium transition-colors ${
-                chartMode === "detail"
-                  ? "bg-white text-gray-800 shadow-sm"
-                  : "text-gray-400"
-              }`}
-            >
-              摂取/消費
-            </button>
+          <div className="flex gap-1.5">
+            {([["net", "実質"], ["detail", "摂取/消費"]] as const).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setChartMode(key as ChartMode)}
+                className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all ${
+                  chartMode === key
+                    ? "bg-green-500 text-white shadow-sm shadow-green-500/20"
+                    : "bg-gray-100 text-gray-400"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </div>
         {chartData.length > 0 ? (
           chartMode === "detail" ? (
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Bar dataKey="calories" fill="#22c55e" name="摂取" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="burned" fill="#f97316" name="消費" radius={[4, 4, 0, 0]} />
+              <BarChart data={chartData} barGap={2}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} width={35} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="calories" fill="#22c55e" name="摂取" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="burned" fill="#fb923c" name="消費" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
             <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Line
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="netGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#22c55e" stopOpacity={0.2} />
+                    <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} width={35} />
+                <Tooltip content={<CustomTooltip />} />
+                <Area
                   type="monotone"
                   dataKey="net"
                   stroke="#22c55e"
-                  strokeWidth={2}
-                  dot={{ fill: "#22c55e", r: 3 }}
+                  strokeWidth={2.5}
+                  fill="url(#netGrad)"
+                  dot={{ fill: "#fff", stroke: "#22c55e", strokeWidth: 2, r: 3 }}
+                  activeDot={{ fill: "#22c55e", stroke: "#fff", strokeWidth: 2, r: 5 }}
                   name="実質 kcal"
                 />
                 {data.goal && (
@@ -336,7 +356,7 @@ export default function StatsView() {
                     name="目標"
                   />
                 )}
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           )
         ) : (
@@ -349,20 +369,31 @@ export default function StatsView() {
         <h3 className="text-sm font-semibold text-gray-500 mb-3">体重推移</h3>
         {weightData.length > 0 ? (
           <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={weightData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+            <AreaChart data={weightData}>
+              <defs>
+                <linearGradient id="weightGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.15} />
+                  <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
               <YAxis
                 domain={["dataMin - 1", "dataMax + 1"]}
-                tick={{ fontSize: 11 }}
+                tick={{ fontSize: 10, fill: "#9ca3af" }}
+                axisLine={false}
+                tickLine={false}
+                width={35}
               />
-              <Tooltip />
-              <Line
+              <Tooltip content={<CustomTooltip />} />
+              <Area
                 type="monotone"
                 dataKey="weight"
                 stroke="#3b82f6"
-                strokeWidth={2}
-                dot={{ fill: "#3b82f6", r: 4 }}
+                strokeWidth={2.5}
+                fill="url(#weightGrad)"
+                dot={{ fill: "#fff", stroke: "#3b82f6", strokeWidth: 2, r: 3 }}
+                activeDot={{ fill: "#3b82f6", stroke: "#fff", strokeWidth: 2, r: 5 }}
                 name="体重 (kg)"
               />
               {data.goal && (
@@ -376,7 +407,7 @@ export default function StatsView() {
                   name="目標"
                 />
               )}
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         ) : (
           <p className="text-center text-gray-400 py-8">データがありません</p>

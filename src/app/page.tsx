@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import ChatView from "@/components/ChatView";
 import RecordsView from "@/components/RecordsView";
 import StatsView from "@/components/StatsView";
@@ -42,19 +42,6 @@ const tabs: { key: Tab; label: string; icon: (active: boolean) => React.ReactNod
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("chat");
   const [showGoalModal, setShowGoalModal] = useState(false);
-  const indicatorRef = useRef<HTMLDivElement>(null);
-  const navRef = useRef<HTMLElement>(null);
-
-  // Animate tab indicator
-  useEffect(() => {
-    if (!indicatorRef.current || !navRef.current) return;
-    const idx = tabs.findIndex((t) => t.key === activeTab);
-    const buttons = navRef.current.querySelectorAll<HTMLButtonElement>("button[data-tab]");
-    if (buttons[idx]) {
-      const btn = buttons[idx];
-      indicatorRef.current.style.left = `${btn.offsetLeft + btn.offsetWidth / 2 - 10}px`;
-    }
-  }, [activeTab]);
 
   return (
     <div className="h-dvh flex flex-col bg-[var(--background)]">
@@ -93,14 +80,9 @@ export default function Home() {
 
       {/* モダンタブバー */}
       <nav
-        ref={navRef}
         className="flex-shrink-0 relative bg-white/80 backdrop-blur-xl border-t border-gray-100/50 flex pb-[env(safe-area-inset-bottom,0px)]"
       >
-        {/* アクティブインジケーター */}
-        <div
-          ref={indicatorRef}
-          className="absolute top-0 w-5 h-[3px] bg-green-500 rounded-full transition-all duration-300 ease-out"
-        />
+{/* no indicator */}
         {tabs.map((tab) => (
           <button
             key={tab.key}
