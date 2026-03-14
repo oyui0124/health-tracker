@@ -44,8 +44,12 @@ export default function ChatView() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
 
   // DBからチャット履歴を読み込み（初回のみ、キャッシュがなければ）
   useEffect(() => {
@@ -143,6 +147,56 @@ export default function ChatView() {
     e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
   };
 
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        if (blob.size === 0) return;
+
+        setIsTranscribing(true);
+        try {
+          const formData = new FormData();
+          formData.append("audio", blob, "recording.webm");
+          const res = await fetch("/api/transcribe", {
+            method: "POST",
+            body: formData,
+          });
+          const data = await res.json();
+          if (data.text) {
+            setInput((prev) => (prev ? prev + " " + data.text : data.text));
+            inputRef.current?.focus();
+          }
+        } catch {
+          // silently fail
+        } finally {
+          setIsTranscribing(false);
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch {
+      // マイクの許可がない場合
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current?.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-3 space-y-3">
@@ -211,6 +265,30 @@ export default function ChatView() {
             rows={1}
             className="flex-1 resize-none rounded-full border border-gray-300 px-4 py-2.5 text-[15px] focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 bg-gray-50"
           />
+          {/* マイクボタン */}
+          <button
+            onClick={isRecording ? stopRecording : startRecording}
+            disabled={isTranscribing}
+            className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+              isRecording
+                ? "bg-red-500 text-white animate-pulse"
+                : isTranscribing
+                  ? "bg-gray-300 text-gray-500"
+                  : "bg-gray-100 text-gray-600 active:bg-gray-200"
+            }`}
+          >
+            {isTranscribing ? (
+              <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                <path d="M7 4a3 3 0 016 0v6a3 3 0 11-6 0V4z" />
+                <path d="M5.5 9.643a.75.75 0 00-1.5 0V10c0 3.06 2.29 5.585 5.25 5.954V17.5h-1.5a.75.75 0 000 1.5h4.5a.75.75 0 000-1.5h-1.5v-1.546A6.001 6.001 0 0016 10v-.357a.75.75 0 00-1.5 0V10a4.5 4.5 0 01-9 0v-.357z" />
+              </svg>
+            )}
+          </button>
+          {/* 送信ボタン */}
           <button
             onClick={sendMessage}
             disabled={!input.trim() || isLoading}
