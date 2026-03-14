@@ -485,15 +485,22 @@ export default function RecordsView() {
 
         {/* フィルタータブ + 追加ボタン */}
         <div className="flex items-center gap-2">
-          <div className="flex flex-1 bg-green-50/80 backdrop-blur-sm rounded-2xl p-1 border border-green-100/50">
+          <div
+            className="flex flex-1 rounded-2xl p-1 border border-white/40"
+            style={{
+              background: "rgba(255,255,255,0.45)",
+              backdropFilter: "blur(16px) saturate(180%)",
+              WebkitBackdropFilter: "blur(16px) saturate(180%)",
+            }}
+          >
             {([["all", "すべて"], ["meal", "食事"], ["exercise", "運動"]] as const).map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => setFilter(key)}
                 className={`flex-1 py-2 rounded-xl text-[13px] font-semibold transition-all ${
                   filter === key
-                    ? "bg-white text-green-700 shadow-sm"
-                    : "text-gray-400"
+                    ? "bg-white/90 text-green-700 shadow-sm"
+                    : "text-gray-500"
                 }`}
               >
                 {label}
