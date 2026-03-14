@@ -40,11 +40,13 @@ type SummaryData = {
   goal: Goal | null;
 };
 
+type ChartMode = "net" | "detail";
+
 export default function StatsView() {
   const [data, setData] = useState<SummaryData | null>(null);
   const [range, setRange] = useState(7);
   const [loading, setLoading] = useState(true);
-  const [showDetail, setShowDetail] = useState(false);
+  const [chartMode, setChartMode] = useState<ChartMode>("net");
 
   useEffect(() => {
     setLoading(true);
@@ -76,6 +78,7 @@ export default function StatsView() {
   const chartData = Object.entries(data.dailyStats)
     .map(([date, stats]) => ({
       date: date.slice(5),
+      fullDate: date,
       calories: stats.calories,
       burned: stats.burned,
       net: stats.calories - stats.burned,
@@ -107,6 +110,9 @@ export default function StatsView() {
   const totalBurned = Object.values(data.dailyStats).reduce((s, d) => s + d.burned, 0);
   const avgCalories = days > 0 ? Math.round(totalCal / days) : 0;
   const avgBurned = days > 0 ? Math.round(totalBurned / days) : 0;
+
+  // 達成カレンダーデータ
+  const calendarDays = buildCalendarDays(data.dailyStats, data.goal);
 
   return (
     <div className="h-full overflow-y-auto no-scrollbar px-4 py-4 space-y-5">
@@ -171,8 +177,8 @@ export default function StatsView() {
               <div className="text-xs text-gray-400">消費 kcal/日</div>
             </div>
             <div>
-              <div className="text-xl font-bold text-blue-500">{avgCalories - avgBurned}</div>
-              <div className="text-xs text-gray-400">正味 kcal/日</div>
+              <div className="text-xl font-bold text-gray-700">{avgCalories - avgBurned}</div>
+              <div className="text-xs text-gray-400">実質 kcal/日</div>
             </div>
           </div>
           {data.goal && (
@@ -186,21 +192,78 @@ export default function StatsView() {
         </div>
       )}
 
+      {/* 達成カレンダー */}
+      {data.goal && calendarDays.length > 0 && (
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+          <h3 className="text-sm font-semibold text-gray-500 mb-3">
+            目標達成カレンダー
+          </h3>
+          <div className="grid grid-cols-7 gap-1.5 text-center">
+            {["月","火","水","木","金","土","日"].map((d) => (
+              <div key={d} className="text-[10px] text-gray-400 pb-1">{d}</div>
+            ))}
+            {calendarDays.map((day, i) => (
+              <div key={i} className="flex flex-col items-center">
+                {day.blank ? (
+                  <div className="w-8 h-8" />
+                ) : (
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-medium ${
+                      day.status === "good"
+                        ? "bg-green-100 text-green-700"
+                        : day.status === "over"
+                          ? "bg-red-100 text-red-600"
+                          : day.status === "nodata"
+                            ? "bg-gray-50 text-gray-300"
+                            : "bg-gray-50 text-gray-400"
+                    }`}
+                    title={day.label}
+                  >
+                    {day.status === "good" ? "○" : day.status === "over" ? "×" : day.dayNum}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-4 mt-3 justify-center text-[10px] text-gray-400">
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-green-100 inline-block" /> 達成</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-100 inline-block" /> 超過</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-gray-50 border border-gray-200 inline-block" /> 記録なし</span>
+          </div>
+        </div>
+      )}
+
       {/* カロリー推移グラフ */}
       <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-gray-500">
             カロリー推移
           </h3>
-          <button
-            onClick={() => setShowDetail(!showDetail)}
-            className="text-xs text-gray-400 border border-gray-200 rounded-full px-3 py-1 active:bg-gray-50"
-          >
-            {showDetail ? "正味のみ" : "内訳を見る"}
-          </button>
+          <div className="flex bg-gray-100 rounded-full p-0.5">
+            <button
+              onClick={() => setChartMode("net")}
+              className={`px-3 py-1 rounded-full text-[11px] font-medium transition-colors ${
+                chartMode === "net"
+                  ? "bg-white text-gray-800 shadow-sm"
+                  : "text-gray-400"
+              }`}
+            >
+              実質
+            </button>
+            <button
+              onClick={() => setChartMode("detail")}
+              className={`px-3 py-1 rounded-full text-[11px] font-medium transition-colors ${
+                chartMode === "detail"
+                  ? "bg-white text-gray-800 shadow-sm"
+                  : "text-gray-400"
+              }`}
+            >
+              摂取/消費
+            </button>
+          </div>
         </div>
         {chartData.length > 0 ? (
-          showDetail ? (
+          chartMode === "detail" ? (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -224,7 +287,7 @@ export default function StatsView() {
                   stroke="#22c55e"
                   strokeWidth={2}
                   dot={{ fill: "#22c55e", r: 3 }}
-                  name="正味 kcal"
+                  name="実質 kcal"
                 />
                 {data.goal && (
                   <Line
@@ -284,7 +347,68 @@ export default function StatsView() {
         )}
       </div>
 
+      {/* CSVエクスポート */}
+      <div className="text-center pb-2">
+        <a
+          href={`/api/export?range=${range}`}
+          download
+          className="text-xs text-gray-400 underline active:text-gray-600"
+        >
+          この期間の記録をCSVでダウンロード
+        </a>
+      </div>
+
       <div className="h-4" />
     </div>
   );
+}
+
+function buildCalendarDays(
+  dailyStats: DailyStats,
+  goal: Goal | null
+): { dayNum: number; status: "good" | "over" | "nodata" | "future"; label: string; blank?: boolean }[] {
+  if (!goal) return [];
+
+  const dates = Object.keys(dailyStats).sort();
+  if (dates.length === 0) return [];
+
+  const firstDate = new Date(dates[0] + "T00:00:00");
+  const lastDate = new Date(dates[dates.length - 1] + "T00:00:00");
+
+  // Start from the Monday of the first date's week
+  const startDay = new Date(firstDate);
+  const dow = startDay.getDay();
+  const mondayOffset = dow === 0 ? -6 : 1 - dow;
+  startDay.setDate(startDay.getDate() + mondayOffset);
+
+  const result: { dayNum: number; status: "good" | "over" | "nodata" | "future"; label: string; blank?: boolean }[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const current = new Date(startDay);
+  while (current <= lastDate || current <= today) {
+    const dateStr = current.toISOString().split("T")[0];
+    const dayNum = current.getDate();
+
+    if (current < firstDate) {
+      result.push({ dayNum, status: "nodata", label: "", blank: true });
+    } else if (current > today) {
+      break;
+    } else {
+      const stats = dailyStats[dateStr];
+      if (stats && stats.calories > 0) {
+        const net = stats.calories - stats.burned;
+        const status = net <= goal.daily_calorie_target ? "good" : "over";
+        result.push({ dayNum, status, label: `${dateStr}: ${net}/${goal.daily_calorie_target} kcal` });
+      } else {
+        result.push({ dayNum, status: "nodata", label: dateStr });
+      }
+    }
+
+    current.setDate(current.getDate() + 1);
+    // Stop after 90 days max
+    if (result.length > 100) break;
+  }
+
+  return result;
 }
