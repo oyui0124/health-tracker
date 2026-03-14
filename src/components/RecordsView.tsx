@@ -587,7 +587,7 @@ export default function RecordsView() {
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg leading-none">💡</span>
               <span className="text-[13px] font-bold text-amber-700">
-                ひとこと
+                アドバイス
               </span>
             </div>
             <div className="space-y-1.5">

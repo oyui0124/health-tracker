@@ -262,30 +262,75 @@ export default function StatsView() {
             <span className="text-[28px] font-extrabold text-gray-900">{avgNet}</span>
             <span className="text-sm text-gray-400 font-medium">kcal</span>
           </div>
-          {data.goal && (() => {
-            const target = data.goal!.daily_calorie_target;
-            const diff = avgNet - target;
-            const isOver = diff > 0;
-            const absDiff = Math.abs(diff);
-            let advice = "";
-            if (absDiff < 50) {
-              advice = "目標通りのペースです。この調子で続けましょう";
-            } else if (isOver) {
-              if (absDiff < 150) {
-                advice = `平均${absDiff}kcalオーバー。間食を1つ減らすか、15分歩くだけで調整できます`;
-              } else {
-                advice = `平均${absDiff}kcalオーバー気味。食事量を少し見直すか、運動を増やしてみましょう`;
-              }
-            } else {
-              if (goalDiff && goalDiff > 0 && goalMonths) {
-                advice = `いいペースです！このまま続ければ約${goalMonths}ヶ月で目標体重に届きそうです`;
-              } else {
-                advice = `目標より${absDiff}kcal少なめ。${absDiff > 300 ? "少なすぎると代謝が落ちるので注意" : "順調なペースです"}`;
+          {(() => {
+            const target = data.goal?.daily_calorie_target;
+            const insights: string[] = [];
+
+            // カロリー傾向分析
+            const sortedDates = Object.keys(data.dailyStats).sort();
+            const recentDays = sortedDates.slice(-7);
+            const olderDays = sortedDates.slice(-14, -7);
+
+            if (recentDays.length >= 3) {
+              const recentAvg = recentDays.reduce((s, d) => s + (data.dailyStats[d].calories - data.dailyStats[d].burned), 0) / recentDays.length;
+              if (olderDays.length >= 3) {
+                const olderAvg = olderDays.reduce((s, d) => s + (data.dailyStats[d].calories - data.dailyStats[d].burned), 0) / olderDays.length;
+                const trendDiff = Math.round(recentAvg - olderAvg);
+                if (trendDiff > 100) {
+                  insights.push(`直近7日は前の週より平均${trendDiff}kcal増加傾向`);
+                } else if (trendDiff < -100) {
+                  insights.push(`直近7日は前の週より平均${Math.abs(trendDiff)}kcal減少。いい流れです`);
+                }
               }
             }
+
+            // 目標との乖離
+            if (target) {
+              const diff = avgNet - target;
+              if (Math.abs(diff) >= 50) {
+                if (diff > 0) {
+                  const weeklyOver = diff * 7;
+                  insights.push(`1週間で約${weeklyOver}kcal分の余剰。体脂肪に換算すると週${(weeklyOver / 7700).toFixed(1)}kg相当`);
+                } else {
+                  if (goalDiff && goalDiff > 0 && goalMonths) {
+                    insights.push(`目標体重まであと${goalDiff.toFixed(1)}kg。今のペースなら約${goalMonths}ヶ月で達成見込み`);
+                  } else {
+                    insights.push(`目標より平均${Math.abs(diff)}kcal少なめで推移中`);
+                  }
+                }
+              } else {
+                insights.push("目標カロリーをほぼ達成できています");
+              }
+            }
+
+            // PFCバランス
+            const totalP = Object.values(data.dailyStats).reduce((s, d) => s + d.protein, 0);
+            const totalC = Object.values(data.dailyStats).reduce((s, d) => s + d.carbs, 0);
+            const totalF = Object.values(data.dailyStats).reduce((s, d) => s + d.fat, 0);
+            const pfcTotal = totalP * 4 + totalC * 4 + totalF * 9;
+            if (pfcTotal > 0 && days >= 3) {
+              const pRatio = Math.round((totalP * 4 / pfcTotal) * 100);
+              const fRatio = Math.round((totalF * 9 / pfcTotal) * 100);
+              if (pRatio < 15) insights.push(`タンパク質が${pRatio}%と不足気味。筋肉維持のため20%以上を目指しましょう`);
+              if (fRatio > 30) insights.push(`脂質が${fRatio}%とやや高め。揚げ物を焼き・蒸しに変えると改善しやすいです`);
+            }
+
+            // 運動
+            const exerciseDays = Object.values(data.dailyStats).filter(d => d.burned > 0).length;
+            if (days >= 7) {
+              const exRate = Math.round((exerciseDays / days) * 100);
+              if (exRate < 30) insights.push(`運動した日が${exRate}%。週3回を目標にすると代謝が上がりやすくなります`);
+            }
+
+            if (insights.length === 0) return null;
             return (
-              <div className="text-[13px] text-gray-600 leading-relaxed">
-                {advice}
+              <div className="space-y-1">
+                {insights.map((t, i) => (
+                  <div key={i} className="text-[13px] text-gray-600 leading-relaxed flex gap-2">
+                    <span className="shrink-0 text-green-400 mt-0.5">•</span>
+                    <span>{t}</span>
+                  </div>
+                ))}
               </div>
             );
           })()}
@@ -317,26 +362,28 @@ export default function StatsView() {
               </div>
             </div>
             <div className="overflow-hidden">
-              <div className="grid grid-cols-7 gap-1 text-center mb-1.5">
+              <div className="grid grid-cols-7 text-center mb-2">
                 {["月","火","水","木","金","土","日"].map((d) => (
-                  <div key={d} className="text-[10px] text-gray-400 font-medium">{d}</div>
+                  <div key={d} className="text-[12px] text-gray-400 font-medium py-1">{d}</div>
                 ))}
               </div>
-              <div className="grid grid-cols-7 gap-1">
+              <div className="grid grid-cols-7">
                 {calendarDays.map((day, i) => (
-                  <div key={i} className="flex items-center justify-center" style={{ aspectRatio: "1/0.85" }}>
-                    {day.blank ? null : (
+                  <div key={i} className="flex items-center justify-center py-[6px]">
+                    {day.blank ? (
+                      <div className="w-8 h-8" />
+                    ) : (
                       <div
-                        className={`w-full h-full rounded-lg flex items-center justify-center text-[11px] font-semibold ${
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-semibold ${
                           calendarMode === "exercise"
                             ? (day.status === "good"
                               ? "bg-orange-100 text-orange-600"
-                              : "bg-gray-50 text-gray-300")
+                              : "text-gray-800")
                             : (day.status === "good"
                               ? "bg-green-100 text-green-600"
                               : day.status === "over"
                                 ? "bg-red-50 text-red-400"
-                                : "bg-gray-50 text-gray-300")
+                                : "text-gray-800")
                         }`}
                       >
                         {day.dayNum}
@@ -346,14 +393,14 @@ export default function StatsView() {
                 ))}
               </div>
             </div>
-            <div className="flex gap-3 mt-2.5 text-[10px] text-gray-400">
+            <div className="flex gap-3 mt-2 text-[11px] text-gray-400">
               {calendarMode === "calorie" ? (
                 <>
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-[3px] bg-green-100 inline-block" /> 達成</span>
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-[3px] bg-red-50 inline-block" /> 超過</span>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-green-100 inline-block" /> 達成</span>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-red-50 inline-block" /> 超過</span>
                 </>
               ) : (
-                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-[3px] bg-orange-100 inline-block" /> 運動した</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-orange-100 inline-block" /> 運動した</span>
               )}
             </div>
           </div>
