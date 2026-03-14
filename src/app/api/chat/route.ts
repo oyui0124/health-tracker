@@ -246,7 +246,7 @@ export async function POST(req: NextRequest) {
       getTodaysSummary(),
       getRecentHistory(),
       fetchNutritionContext(message),
-      db.from("food_memories").select("*").order("created_at", { ascending: false }).limit(50)
+      db.from("food_memories").select("*").order("created_at", { ascending: false }).limit(20)
         .then(r => r.data || []),
     ]);
 
@@ -301,10 +301,31 @@ export async function POST(req: NextRequest) {
       response_format: { type: "json_object" },
     });
 
-    const [chatResponse, extractResponse] = await Promise.all([chatPromise, extractPromise]);
+    const results = await Promise.allSettled([chatPromise, extractPromise]);
 
-    const assistantMessage = chatResponse.choices[0]?.message?.content || "";
-    const extractedJson = extractResponse.choices[0]?.message?.content || "{}";
+    const chatResult = results[0];
+    const extractResult = results[1];
+
+    if (chatResult.status === "rejected") {
+      console.error("Chat LLM error:", chatResult.reason?.message || chatResult.reason);
+      // extractが成功してればデータだけでも返す
+      const fallbackEntries: Record<string, unknown>[] = [];
+      if (extractResult.status === "fulfilled") {
+        try {
+          const parsed = JSON.parse(extractResult.value.choices[0]?.message?.content || "{}");
+          if (parsed?.entries?.length > 0) fallbackEntries.push(...parsed.entries);
+        } catch {}
+      }
+      return NextResponse.json({
+        message: "ごめん、ちょっと調子悪い...もう一回送ってみて！",
+        pendingEntries: fallbackEntries.length > 0 ? fallbackEntries : undefined,
+      });
+    }
+
+    const assistantMessage = chatResult.value.choices[0]?.message?.content || "";
+    const extractedJson = extractResult.status === "fulfilled"
+      ? (extractResult.value.choices[0]?.message?.content || "{}")
+      : "{}";
 
     // データ抽出結果をパース（自動保存せず、フロントに返す）
     let extractedEntries: Record<string, unknown>[] = [];
@@ -344,11 +365,11 @@ export async function POST(req: NextRequest) {
       message: cleanMessage,
       pendingEntries: extractedEntries.length > 0 ? extractedEntries : undefined,
     });
-  } catch (error) {
-    console.error("Chat API error:", error);
-    return NextResponse.json(
-      { error: "メッセージの処理中にエラーが発生しました" },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error("Chat API error:", errMsg);
+    return NextResponse.json({
+      message: `ごめん、エラーが出ちゃった...もう一回試してみて！\n(${errMsg.slice(0, 100)})`,
+    });
   }
 }

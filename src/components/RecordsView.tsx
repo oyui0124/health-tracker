@@ -319,13 +319,16 @@ export default function RecordsView() {
   const handleDelete = async (type: string, id: string) => {
     if (deleting) return;
     setDeleting(id);
+    // Optimistic update: 即座にUIから消す
+    if (type === "meal") setMeals((prev) => prev.filter((m) => m.id !== id));
+    else if (type === "exercise") setExercises((prev) => prev.filter((e) => e.id !== id));
+    else if (type === "weight") setWeights((prev) => prev.filter((w) => w.id !== id));
     try {
       await fetch("/api/records", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type, id }),
       });
-      fetchRecords();
     } finally {
       setDeleting(null);
     }
