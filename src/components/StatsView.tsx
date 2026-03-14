@@ -115,7 +115,23 @@ export default function StatsView() {
   const calendarDays = buildCalendarDays(data.dailyStats, data.goal);
 
   return (
-    <div className="h-full overflow-y-auto no-scrollbar px-4 py-4 space-y-5">
+    <div className="h-full overflow-y-auto no-scrollbar px-4 py-4 space-y-5 animate-fadeIn">
+      <style jsx>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn > * {
+          animation: fadeIn 0.4s ease-out both;
+        }
+        .animate-fadeIn > *:nth-child(1) { animation-delay: 0ms; }
+        .animate-fadeIn > *:nth-child(2) { animation-delay: 60ms; }
+        .animate-fadeIn > *:nth-child(3) { animation-delay: 120ms; }
+        .animate-fadeIn > *:nth-child(4) { animation-delay: 180ms; }
+        .animate-fadeIn > *:nth-child(5) { animation-delay: 240ms; }
+        .animate-fadeIn > *:nth-child(6) { animation-delay: 300ms; }
+        .animate-fadeIn > *:nth-child(7) { animation-delay: 360ms; }
+      `}</style>
       {/* 期間切り替え */}
       <div className="flex gap-2">
         {[7, 14, 30, 90].map((d) => (
@@ -192,46 +208,66 @@ export default function StatsView() {
         </div>
       )}
 
-      {/* 達成カレンダー */}
-      {data.goal && calendarDays.length > 0 && (
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-500 mb-3">
-            目標達成カレンダー
-          </h3>
-          <div className="grid grid-cols-7 gap-1.5 text-center">
-            {["月","火","水","木","金","土","日"].map((d) => (
-              <div key={d} className="text-[10px] text-gray-400 pb-1">{d}</div>
-            ))}
-            {calendarDays.map((day, i) => (
-              <div key={i} className="flex flex-col items-center">
-                {day.blank ? (
-                  <div className="w-8 h-8" />
-                ) : (
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-medium ${
-                      day.status === "good"
-                        ? "bg-green-100 text-green-700"
-                        : day.status === "over"
-                          ? "bg-red-100 text-red-600"
-                          : day.status === "nodata"
-                            ? "bg-gray-50 text-gray-300"
-                            : "bg-gray-50 text-gray-400"
-                    }`}
-                    title={day.label}
-                  >
-                    {day.status === "good" ? "○" : day.status === "over" ? "×" : day.dayNum}
-                  </div>
-                )}
+      {/* 達成ストリーク */}
+      {data.goal && calendarDays.length > 0 && (() => {
+        const actual = calendarDays.filter((d) => !d.blank);
+        const goodCount = actual.filter((d) => d.status === "good").length;
+        const overCount = actual.filter((d) => d.status === "over").length;
+        const total = actual.length;
+        const rate = total > 0 ? Math.round((goodCount / total) * 100) : 0;
+        // Current streak
+        let streak = 0;
+        for (let i = actual.length - 1; i >= 0; i--) {
+          if (actual[i].status === "good") streak++;
+          else break;
+        }
+        return (
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-500">目標達成</h3>
+              <div className="flex items-center gap-3 text-xs text-gray-400">
+                <span>{goodCount}日達成</span>
+                <span>{overCount}日超過</span>
+                <span className="font-semibold text-green-600">{rate}%</span>
               </div>
-            ))}
+            </div>
+            {streak > 0 && (
+              <div className="mb-3 text-xs text-green-600 font-medium">
+                {streak}日連続達成中
+              </div>
+            )}
+            {/* コンパクトヒートマップ: 横スクロール */}
+            <div className="overflow-x-auto no-scrollbar -mx-1 px-1">
+              <div className="flex gap-[3px] items-end">
+                {actual.map((day, i) => (
+                  <div key={i} className="flex flex-col items-center gap-0.5">
+                    <div
+                      className={`w-[18px] h-[18px] rounded-[4px] transition-colors ${
+                        day.status === "good"
+                          ? "bg-green-400"
+                          : day.status === "over"
+                            ? "bg-red-300"
+                            : "bg-gray-100"
+                      }`}
+                      title={day.label}
+                    />
+                    {(day.dayNum === 1 || i === 0) && (
+                      <div className="text-[8px] text-gray-400 leading-none mt-0.5">
+                        {day.dayNum}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3 mt-2.5 text-[10px] text-gray-400">
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-[3px] bg-green-400 inline-block" /> 達成</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-[3px] bg-red-300 inline-block" /> 超過</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-[3px] bg-gray-100 inline-block" /> 未記録</span>
+            </div>
           </div>
-          <div className="flex gap-4 mt-3 justify-center text-[10px] text-gray-400">
-            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-green-100 inline-block" /> 達成</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-100 inline-block" /> 超過</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-gray-50 border border-gray-200 inline-block" /> 記録なし</span>
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* カロリー推移グラフ */}
       <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
