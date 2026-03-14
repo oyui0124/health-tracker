@@ -16,13 +16,15 @@ import {
 import { calculateBMR, getAge } from "@/lib/bmr";
 
 /*
- * デザインルール:
+ * 統一デザインルール (Records / Stats 共通):
  * - カード: bg-white rounded-2xl p-4 shadow-sm border border-gray-100
- * - 見出し: text-[13px] font-bold text-gray-800
- * - サブラベル: text-[11px] text-gray-400 font-medium
+ * - 見出し: text-[13px] font-bold text-gray-800 + アイコン (gap-1.5)
+ * - サブラベル: text-[11px] text-gray-400 font-medium + アイコン (gap-1)
  * - 大数字: text-[28px] font-extrabold text-gray-900
  * - 中数字: text-lg font-bold text-gray-800
  * - 小数字: text-[13px] font-semibold
+ * - セグメント: glassmorphism rounded-xl p-1, ボタン rounded-[10px]
+ * - モーダルinput: rounded-xl border-gray-200
  */
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -161,15 +163,22 @@ export default function StatsView() {
   return (
     <div className="h-full overflow-y-auto no-scrollbar px-4 py-4 space-y-4">
       {/* 期間切り替え */}
-      <div className="flex gap-2">
+      <div
+        className="flex rounded-xl p-1 border border-white/40"
+        style={{
+          background: "rgba(255,255,255,0.45)",
+          backdropFilter: "blur(16px) saturate(180%)",
+          WebkitBackdropFilter: "blur(16px) saturate(180%)",
+        }}
+      >
         {[7, 14, 30, 90].map((d) => (
           <button
             key={d}
             onClick={() => setRange(d)}
-            className={`flex-1 py-2 rounded-xl text-[13px] font-semibold transition-colors ${
+            className={`flex-1 py-2 rounded-[10px] text-[13px] font-semibold transition-all ${
               range === d
-                ? "bg-green-500 text-white"
-                : "bg-gray-100 text-gray-500"
+                ? "bg-white/90 text-green-700 shadow-sm"
+                : "text-gray-500"
             }`}
           >
             {d}日
@@ -179,7 +188,10 @@ export default function StatsView() {
 
       {/* ヒーローカード: 目標進捗（最も重要） */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-        <div className="text-[13px] font-bold text-gray-800 mb-3">目標の進捗</div>
+        <div className="text-[13px] font-bold text-gray-800 mb-3 flex items-center gap-1.5">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-green-500"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" /></svg>
+          目標の進捗
+        </div>
         <div className="flex items-center gap-5">
           {/* 目標体重まで */}
           <div className="flex-1">
@@ -205,13 +217,19 @@ export default function StatsView() {
           <div className="text-right space-y-1">
             {latestWeight && (
               <div>
-                <div className="text-[11px] text-gray-400 font-medium">現在</div>
+                <div className="text-[11px] text-gray-400 font-medium flex items-center justify-end gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M8 1a7 7 0 100 14A7 7 0 008 1zM5.657 5.657a4 4 0 015.033.391.75.75 0 001.06-1.06 5.5 5.5 0 00-6.92-.537.75.75 0 10.827 1.252V5.657z" clipRule="evenodd" /></svg>
+                  現在
+                </div>
                 <div className="text-lg font-bold text-gray-800">{latestWeight}<span className="text-[11px] text-gray-400 ml-0.5">kg</span></div>
               </div>
             )}
             {bmr && (
               <div>
-                <div className="text-[11px] text-gray-400 font-medium">基礎代謝</div>
+                <div className="text-[11px] text-gray-400 font-medium flex items-center justify-end gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M8 1a.75.75 0 01.75.75v6.5a.75.75 0 01-1.5 0v-6.5A.75.75 0 018 1zM3 9.5a5 5 0 0110 0c0 2.21-2.239 4.5-5 4.5S3 11.71 3 9.5z" /></svg>
+                  基礎代謝
+                </div>
                 <div className="text-[13px] font-semibold text-gray-600">{bmr} kcal</div>
               </div>
             )}
@@ -239,7 +257,10 @@ export default function StatsView() {
         {/* 平均実質カロリー */}
         {days > 0 && (
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 w-[130px] shrink-0">
-            <div className="text-[11px] text-gray-400 font-medium mb-1">実質カロリー</div>
+            <div className="text-[11px] text-gray-400 font-medium mb-1 flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path d="M12.5 16.5a.75.75 0 01-.75-.75v-9.5a.75.75 0 011.5 0v9.5a.75.75 0 01-.75.75zM7.5 16.5a.75.75 0 01-.75-.75V10a.75.75 0 011.5 0v5.75a.75.75 0 01-.75.75zM10 16.5a.75.75 0 01-.75-.75v-7.5a.75.75 0 011.5 0v7.5a.75.75 0 01-.75.75z" /></svg>
+              実質カロリー
+            </div>
             <div className="text-[11px] text-gray-400 font-medium mb-2">{range}日平均</div>
             <div className="flex items-baseline gap-0.5">
               <span className="text-[24px] font-extrabold text-gray-900">{avgNet}</span>
@@ -262,7 +283,10 @@ export default function StatsView() {
         {data.goal && calendarDays.length > 0 && (
           <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex-1 min-w-0">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-[11px] text-gray-400 font-medium">達成カレンダー</div>
+              <div className="text-[11px] text-gray-400 font-medium flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd" /></svg>
+                達成カレンダー
+              </div>
               <div className="flex items-center gap-2 text-[11px]">
                 {streak > 0 && <span className="text-green-600 font-bold">{streak}日連続</span>}
                 <span className="bg-green-50 text-green-600 font-bold px-1.5 py-0.5 rounded-md">{rate}%</span>
@@ -305,7 +329,10 @@ export default function StatsView() {
       {/* カロリー推移グラフ */}
       <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
         <div className="flex items-center justify-between mb-3">
-          <div className="text-[13px] font-bold text-gray-800">カロリー推移</div>
+          <div className="text-[13px] font-bold text-gray-800 flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-green-500"><path d="M15.5 2A1.5 1.5 0 0014 3.5v13a1.5 1.5 0 001.5 1.5h1a1.5 1.5 0 001.5-1.5v-13A1.5 1.5 0 0016.5 2h-1zM9.5 6A1.5 1.5 0 008 7.5v9A1.5 1.5 0 009.5 18h1a1.5 1.5 0 001.5-1.5v-9A1.5 1.5 0 0010.5 6h-1zM3.5 10A1.5 1.5 0 002 11.5v5A1.5 1.5 0 003.5 18h1A1.5 1.5 0 006 16.5v-5A1.5 1.5 0 004.5 10h-1z" /></svg>
+            カロリー推移
+          </div>
           {/* 大きめの切り替えボタン */}
           <div className="flex bg-gray-100 rounded-xl p-0.5">
             {([["net", "実質"], ["detail", "内訳"]] as const).map(([key, label]) => (
@@ -381,7 +408,10 @@ export default function StatsView() {
       {/* 体重推移グラフ */}
       <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
         <div className="flex items-center justify-between mb-3">
-          <div className="text-[13px] font-bold text-gray-800">体重推移</div>
+          <div className="text-[13px] font-bold text-gray-800 flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-blue-500"><path d="M10 1a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 1zM5.05 3.05a.75.75 0 011.06 0l1.062 1.06A.75.75 0 116.11 5.173L5.05 4.11a.75.75 0 010-1.06zm9.9 0a.75.75 0 010 1.06l-1.06 1.062a.75.75 0 01-1.062-1.061l1.061-1.06a.75.75 0 011.06 0zM3 8a7 7 0 1114 0A7 7 0 013 8zm4-1a.75.75 0 000 1.5h2.25V10a.75.75 0 001.5 0V8.5H13a.75.75 0 000-1.5h-2.25V5.5a.75.75 0 00-1.5 0V7H7z" clipRule="evenodd" /></svg>
+            体重推移
+          </div>
           {weightData.length > 0 && (
             <span className="text-[12px] text-gray-500">最新 <span className="font-bold text-gray-700">{weightData[weightData.length - 1].weight}kg</span></span>
           )}

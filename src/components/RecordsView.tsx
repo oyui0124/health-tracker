@@ -380,7 +380,7 @@ export default function RecordsView() {
 
       <div className="px-4 space-y-3.5 pb-28">
         {/* カロリーサマリーカード */}
-        <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
           <div className="flex items-baseline justify-between mb-1.5">
             <div>
               <span className="text-[34px] font-extrabold text-gray-900 tracking-tight">{totalCalories - totalBurned}</span>
@@ -418,8 +418,11 @@ export default function RecordsView() {
         {/* 体重 + PFC 横並び */}
         <div className="flex gap-3">
           {/* 体重カード */}
-          <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 flex-shrink-0 w-[120px]">
-            <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">体重</div>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex-shrink-0 w-[120px]">
+            <div className="text-[11px] text-gray-400 font-medium mb-1.5 flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M10 1a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 1zM5.05 3.05a.75.75 0 011.06 0l1.062 1.06A.75.75 0 116.11 5.173L5.05 4.11a.75.75 0 010-1.06zm9.9 0a.75.75 0 010 1.06l-1.06 1.062a.75.75 0 01-1.062-1.061l1.061-1.06a.75.75 0 011.06 0zM3 8a7 7 0 1114 0A7 7 0 013 8zm4-1a.75.75 0 000 1.5h2.25V10a.75.75 0 001.5 0V8.5H13a.75.75 0 000-1.5h-2.25V5.5a.75.75 0 00-1.5 0V7H7z" clipRule="evenodd" /></svg>
+              体重
+            </div>
             <div className="flex items-baseline">
               <span className="text-[32px] font-extrabold text-gray-900 tracking-tight leading-none">
                 {weights.length > 0 ? weights[0].weight : latestWeight || "—"}
@@ -429,8 +432,11 @@ export default function RecordsView() {
           </div>
 
           {/* PFCカード */}
-          <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 flex-1">
-            <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">PFCバランス</div>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex-1">
+            <div className="text-[11px] text-gray-400 font-medium mb-2 flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path d="M12.5 16.5a.75.75 0 01-.75-.75v-9.5a.75.75 0 011.5 0v9.5a.75.75 0 01-.75.75zM7.5 16.5a.75.75 0 01-.75-.75V10a.75.75 0 011.5 0v5.75a.75.75 0 01-.75.75zM10 16.5a.75.75 0 01-.75-.75v-7.5a.75.75 0 011.5 0v7.5a.75.75 0 01-.75.75z" /></svg>
+              PFCバランス
+            </div>
             {pfcRatio && (
               <div className="mb-2.5">
                 <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
@@ -465,7 +471,7 @@ export default function RecordsView() {
 
         {/* アドバイス */}
         {adviceTips.length > 0 && (
-          <div className="bg-amber-50 rounded-3xl p-4 border border-amber-200/60 shadow-sm">
+          <div className="bg-amber-50 rounded-2xl p-4 border border-amber-200/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg leading-none">💡</span>
               <span className="text-[13px] font-bold text-amber-700">
@@ -486,23 +492,28 @@ export default function RecordsView() {
         {/* フィルタータブ + 追加ボタン */}
         <div className="flex items-center gap-2">
           <div
-            className="flex flex-1 rounded-2xl p-1 border border-white/40"
+            className="flex flex-1 rounded-xl p-1 border border-white/40"
             style={{
               background: "rgba(255,255,255,0.45)",
               backdropFilter: "blur(16px) saturate(180%)",
               WebkitBackdropFilter: "blur(16px) saturate(180%)",
             }}
           >
-            {([["all", "すべて"], ["meal", "食事"], ["exercise", "運動"]] as const).map(([key, label]) => (
+            {([
+              ["all", "すべて", null],
+              ["meal", "食事", <svg key="meal-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path d="M3.105 2.289a.75.75 0 00-.826.95l1.414 4.925A1.5 1.5 0 005.135 9.25h.757l-.642 6.77a.75.75 0 001.493.142L7.5 9.25h.322a1.5 1.5 0 001.442-1.086l1.414-4.925a.75.75 0 00-.826-.95 27.11 27.11 0 00-6.747 0zM13.5 2.5a.75.75 0 00-1.5 0v5.846a1.5 1.5 0 001.122 1.451L13.5 17a.75.75 0 001.5 0V9.797a1.5 1.5 0 001.122-1.451V2.5a.75.75 0 00-1.5 0v4.5h-.622V2.5z" /></svg>],
+              ["exercise", "運動", <svg key="exercise-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path d="M6.75 2.5A1.25 1.25 0 108 3.75 1.25 1.25 0 006.75 2.5zM3.5 7.75a.75.75 0 01.75-.75h2.5a.75.75 0 01.624.334L8.68 9.312l1.57-1.57a.75.75 0 011.06 0l2.5 2.5a.75.75 0 11-1.06 1.06L10.5 9.06l-1.72 1.72a.75.75 0 01-1.156-.176L6.036 8.5H4.25a.75.75 0 01-.75-.75zM2.75 12a.75.75 0 000 1.5h3.5l1.898 2.848a.75.75 0 001.254-.832L7.25 12H2.75zm8 0a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5z" /></svg>],
+            ] as const).map(([key, label, icon]) => (
               <button
                 key={key}
-                onClick={() => setFilter(key)}
-                className={`flex-1 py-2 rounded-xl text-[13px] font-semibold transition-all ${
+                onClick={() => setFilter(key as "all" | "meal" | "exercise")}
+                className={`flex-1 py-2 rounded-[10px] text-[13px] font-semibold transition-all flex items-center justify-center gap-1 ${
                   filter === key
                     ? "bg-white/90 text-green-700 shadow-sm"
                     : "text-gray-500"
                 }`}
               >
+                {icon}
                 {label}
               </button>
             ))}
@@ -519,12 +530,14 @@ export default function RecordsView() {
         <div className="space-y-3">
           {/* 食事 */}
           {filteredMeals.map((m) => (
-            <div key={m.id} className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100">
+            <div key={m.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-sm">🍽</span>
-                    <span className="text-[11px] font-bold text-green-700 uppercase tracking-wide">
+                    <span className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M3.105 2.289a.75.75 0 00-.826.95l1.414 4.925A1.5 1.5 0 005.135 9.25h.757l-.642 6.77a.75.75 0 001.493.142L7.5 9.25h.322a1.5 1.5 0 001.442-1.086l1.414-4.925a.75.75 0 00-.826-.95 27.11 27.11 0 00-6.747 0zM13.5 2.5a.75.75 0 00-1.5 0v5.846a1.5 1.5 0 001.122 1.451L13.5 17a.75.75 0 001.5 0V9.797a1.5 1.5 0 001.122-1.451V2.5a.75.75 0 00-1.5 0v4.5h-.622V2.5z" /></svg>
+                    </span>
+                    <span className="text-[11px] font-semibold text-green-700">
                       {MEAL_TYPE_LABEL[m.meal_type] || m.meal_type}
                     </span>
                   </div>
@@ -541,16 +554,16 @@ export default function RecordsView() {
                 <div className="flex items-center gap-1 ml-2 shrink-0 mt-1">
                   <button
                     onClick={() => setEditTarget({ type: "meal", data: { ...m } })}
-                    className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 text-[13px] border border-green-100"
+                    className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 border border-green-100"
                   >
-                    ✎
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M13.488 2.513a1.75 1.75 0 00-2.475 0L6.75 6.774a2.75 2.75 0 00-.596.892l-.848 2.047a.75.75 0 00.98.98l2.047-.848a2.75 2.75 0 00.892-.596l4.261-4.262a1.75 1.75 0 000-2.474z" /><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0114 9v2.25A2.75 2.75 0 0111.25 14h-6.5A2.75 2.75 0 012 11.25v-6.5A2.75 2.75 0 014.75 2H7a.75.75 0 010 1.5H4.75z" /></svg>
                   </button>
                   <button
                     onClick={() => handleDelete("meal", m.id)}
                     disabled={deleting === m.id}
-                    className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center text-red-400 active:bg-red-100 text-[13px] border border-red-100"
+                    className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center text-red-400 active:bg-red-100 border border-red-100"
                   >
-                    {deleting === m.id ? "…" : "✕"}
+                    {deleting === m.id ? "…" : <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 000 1.5h.3l.815 8.15A1.5 1.5 0 005.357 15h5.285a1.5 1.5 0 001.493-1.35l.815-8.15h.3a.75.75 0 000-1.5H11v-.75A2.25 2.25 0 008.75 1h-1.5A2.25 2.25 0 005 3.25zm2.25-.75a.75.75 0 00-.75.75V4h3v-.75a.75.75 0 00-.75-.75h-1.5zM6.05 6a.75.75 0 01.787.713l.275 5.5a.75.75 0 01-1.498.075l-.275-5.5A.75.75 0 016.05 6zm3.9 0a.75.75 0 01.712.787l-.275 5.5a.75.75 0 01-1.498-.075l.275-5.5a.75.75 0 01.786-.711z" clipRule="evenodd" /></svg>}
                   </button>
                 </div>
               </div>
@@ -559,12 +572,14 @@ export default function RecordsView() {
 
           {/* 運動 */}
           {filteredExercises.map((e) => (
-            <div key={e.id} className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100">
+            <div key={e.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-sm">🏃</span>
-                    <span className="text-[11px] font-bold text-orange-600 uppercase tracking-wide">運動</span>
+                    <span className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M6.75 2.5A1.25 1.25 0 108 3.75 1.25 1.25 0 006.75 2.5zM3.5 7.75a.75.75 0 01.75-.75h2.5a.75.75 0 01.624.334L8.68 9.312l1.57-1.57a.75.75 0 011.06 0l2.5 2.5a.75.75 0 11-1.06 1.06L10.5 9.06l-1.72 1.72a.75.75 0 01-1.156-.176L6.036 8.5H4.25a.75.75 0 01-.75-.75zM2.75 12a.75.75 0 000 1.5h3.5l1.898 2.848a.75.75 0 001.254-.832L7.25 12H2.75zm8 0a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5z" /></svg>
+                    </span>
+                    <span className="text-[11px] font-semibold text-orange-600">運動</span>
                   </div>
                   <div className="text-[15px] font-semibold text-gray-900 mb-1.5 leading-snug">
                     {e.description}
@@ -577,16 +592,16 @@ export default function RecordsView() {
                 <div className="flex items-center gap-1 ml-2 shrink-0 mt-1">
                   <button
                     onClick={() => setEditTarget({ type: "exercise", data: { ...e } })}
-                    className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 text-[13px] border border-green-100"
+                    className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 border border-green-100"
                   >
-                    ✎
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M13.488 2.513a1.75 1.75 0 00-2.475 0L6.75 6.774a2.75 2.75 0 00-.596.892l-.848 2.047a.75.75 0 00.98.98l2.047-.848a2.75 2.75 0 00.892-.596l4.261-4.262a1.75 1.75 0 000-2.474z" /><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0114 9v2.25A2.75 2.75 0 0111.25 14h-6.5A2.75 2.75 0 012 11.25v-6.5A2.75 2.75 0 014.75 2H7a.75.75 0 010 1.5H4.75z" /></svg>
                   </button>
                   <button
                     onClick={() => handleDelete("exercise", e.id)}
                     disabled={deleting === e.id}
-                    className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center text-red-400 active:bg-red-100 text-[13px] border border-red-100"
+                    className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center text-red-400 active:bg-red-100 border border-red-100"
                   >
-                    {deleting === e.id ? "…" : "✕"}
+                    {deleting === e.id ? "…" : <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 000 1.5h.3l.815 8.15A1.5 1.5 0 005.357 15h5.285a1.5 1.5 0 001.493-1.35l.815-8.15h.3a.75.75 0 000-1.5H11v-.75A2.25 2.25 0 008.75 1h-1.5A2.25 2.25 0 005 3.25zm2.25-.75a.75.75 0 00-.75.75V4h3v-.75a.75.75 0 00-.75-.75h-1.5zM6.05 6a.75.75 0 01.787.713l.275 5.5a.75.75 0 01-1.498.075l-.275-5.5A.75.75 0 016.05 6zm3.9 0a.75.75 0 01.712.787l-.275 5.5a.75.75 0 01-1.498-.075l.275-5.5a.75.75 0 01.786-.711z" clipRule="evenodd" /></svg>}
                   </button>
                 </div>
               </div>
@@ -595,25 +610,27 @@ export default function RecordsView() {
 
           {/* 体重 */}
           {filter === "all" && weights.map((w) => (
-            <div key={w.id} className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100">
+            <div key={w.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <span className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-sm">⚖️</span>
+                  <span className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10 1a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 1zM5.05 3.05a.75.75 0 011.06 0l1.062 1.06A.75.75 0 116.11 5.173L5.05 4.11a.75.75 0 010-1.06zm9.9 0a.75.75 0 010 1.06l-1.06 1.062a.75.75 0 01-1.062-1.061l1.061-1.06a.75.75 0 011.06 0zM3 8a7 7 0 1114 0A7 7 0 013 8zm4-1a.75.75 0 000 1.5h2.25V10a.75.75 0 001.5 0V8.5H13a.75.75 0 000-1.5h-2.25V5.5a.75.75 0 00-1.5 0V7H7z" clipRule="evenodd" /></svg>
+                  </span>
                   <span className="text-[15px] font-semibold text-gray-900">{w.weight} kg</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setEditTarget({ type: "weight", data: { ...w } })}
-                    className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 text-[13px] border border-green-100"
+                    className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 border border-green-100"
                   >
-                    ✎
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M13.488 2.513a1.75 1.75 0 00-2.475 0L6.75 6.774a2.75 2.75 0 00-.596.892l-.848 2.047a.75.75 0 00.98.98l2.047-.848a2.75 2.75 0 00.892-.596l4.261-4.262a1.75 1.75 0 000-2.474z" /><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0114 9v2.25A2.75 2.75 0 0111.25 14h-6.5A2.75 2.75 0 012 11.25v-6.5A2.75 2.75 0 014.75 2H7a.75.75 0 010 1.5H4.75z" /></svg>
                   </button>
                   <button
                     onClick={() => handleDelete("weight", w.id)}
                     disabled={deleting === w.id}
-                    className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center text-red-400 active:bg-red-100 text-[13px] border border-red-100"
+                    className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center text-red-400 active:bg-red-100 border border-red-100"
                   >
-                    {deleting === w.id ? "…" : "✕"}
+                    {deleting === w.id ? "…" : <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 000 1.5h.3l.815 8.15A1.5 1.5 0 005.357 15h5.285a1.5 1.5 0 001.493-1.35l.815-8.15h.3a.75.75 0 000-1.5H11v-.75A2.25 2.25 0 008.75 1h-1.5A2.25 2.25 0 005 3.25zm2.25-.75a.75.75 0 00-.75.75V4h3v-.75a.75.75 0 00-.75-.75h-1.5zM6.05 6a.75.75 0 01.787.713l.275 5.5a.75.75 0 01-1.498.075l-.275-5.5A.75.75 0 016.05 6zm3.9 0a.75.75 0 01.712.787l-.275 5.5a.75.75 0 01-1.498-.075l.275-5.5a.75.75 0 01.786-.711z" clipRule="evenodd" /></svg>}
                   </button>
                 </div>
               </div>
@@ -623,7 +640,9 @@ export default function RecordsView() {
           {/* 空の場合 */}
           {filteredMeals.length === 0 && filteredExercises.length === 0 && (filter !== "all" || weights.length === 0) && (
             <div className="text-center py-12">
-              <div className="text-3xl mb-2">📝</div>
+              <div className="flex justify-center mb-2 text-gray-300">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-10 h-10"><path fillRule="evenodd" d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0016.5 9h-1.875a1.875 1.875 0 01-1.875-1.875V5.25A3.75 3.75 0 009 1.5H5.625zM7.5 15a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 017.5 15zm.75 2.25a.75.75 0 000 1.5H12a.75.75 0 000-1.5H8.25z" clipRule="evenodd" /><path d="M12.971 1.816A5.23 5.23 0 0114.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 013.434 1.279 9.768 9.768 0 00-6.963-6.963z" /></svg>
+              </div>
               <p className="text-gray-400 text-sm">記録がありません</p>
             </div>
           )}
@@ -641,19 +660,19 @@ export default function RecordsView() {
               onClick={() => { setAddType("meal"); setShowAddMenu(false); }}
               className="w-full px-4 py-3 text-left text-[14px] font-medium text-gray-800 active:bg-gray-50 flex items-center gap-3"
             >
-              <span className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-sm">🍽</span> 食事
+              <span className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-green-600"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M3.105 2.289a.75.75 0 00-.826.95l1.414 4.925A1.5 1.5 0 005.135 9.25h.757l-.642 6.77a.75.75 0 001.493.142L7.5 9.25h.322a1.5 1.5 0 001.442-1.086l1.414-4.925a.75.75 0 00-.826-.95 27.11 27.11 0 00-6.747 0zM13.5 2.5a.75.75 0 00-1.5 0v5.846a1.5 1.5 0 001.122 1.451L13.5 17a.75.75 0 001.5 0V9.797a1.5 1.5 0 001.122-1.451V2.5a.75.75 0 00-1.5 0v4.5h-.622V2.5z" /></svg></span> 食事
             </button>
             <button
               onClick={() => { setAddType("exercise"); setShowAddMenu(false); }}
               className="w-full px-4 py-3 text-left text-[14px] font-medium text-gray-800 active:bg-gray-50 flex items-center gap-3"
             >
-              <span className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-sm">🏃</span> 運動
+              <span className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-orange-600"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M6.75 2.5A1.25 1.25 0 108 3.75 1.25 1.25 0 006.75 2.5zM3.5 7.75a.75.75 0 01.75-.75h2.5a.75.75 0 01.624.334L8.68 9.312l1.57-1.57a.75.75 0 011.06 0l2.5 2.5a.75.75 0 11-1.06 1.06L10.5 9.06l-1.72 1.72a.75.75 0 01-1.156-.176L6.036 8.5H4.25a.75.75 0 01-.75-.75zM2.75 12a.75.75 0 000 1.5h3.5l1.898 2.848a.75.75 0 001.254-.832L7.25 12H2.75zm8 0a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5z" /></svg></span> 運動
             </button>
             <button
               onClick={() => { setAddType("weight"); setShowAddMenu(false); }}
               className="w-full px-4 py-3 text-left text-[14px] font-medium text-gray-800 active:bg-gray-50 flex items-center gap-3"
             >
-              <span className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-sm">⚖️</span> 体重
+              <span className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10 1a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 1zM5.05 3.05a.75.75 0 011.06 0l1.062 1.06A.75.75 0 116.11 5.173L5.05 4.11a.75.75 0 010-1.06zm9.9 0a.75.75 0 010 1.06l-1.06 1.062a.75.75 0 01-1.062-1.061l1.061-1.06a.75.75 0 011.06 0zM3 8a7 7 0 1114 0A7 7 0 013 8zm4-1a.75.75 0 000 1.5h2.25V10a.75.75 0 001.5 0V8.5H13a.75.75 0 000-1.5h-2.25V5.5a.75.75 0 00-1.5 0V7H7z" clipRule="evenodd" /></svg></span> 体重
             </button>
           </div>
         </>
@@ -753,7 +772,7 @@ function EditModal({
   };
 
   const inputClass =
-    "w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:border-green-500";
+    "w-full border border-gray-200 rounded-xl px-3 py-2.5 text-base focus:outline-none focus:border-green-500 bg-white";
 
   const inputClass2 = inputClass;
 
@@ -927,7 +946,7 @@ function AddModal({
   };
 
   const inputClass =
-    "w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:border-green-500";
+    "w-full border border-gray-200 rounded-xl px-3 py-2.5 text-base focus:outline-none focus:border-green-500 bg-white";
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/30" onClick={onClose}>
