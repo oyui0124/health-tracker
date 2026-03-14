@@ -485,14 +485,14 @@ export default function RecordsView() {
 
         {/* フィルタータブ + 追加ボタン */}
         <div className="flex items-center gap-2">
-          <div className="flex flex-1 bg-gray-100 rounded-xl p-0.5">
+          <div className="flex flex-1 bg-green-50/80 backdrop-blur-sm rounded-2xl p-1 border border-green-100/50">
             {([["all", "すべて"], ["meal", "食事"], ["exercise", "運動"]] as const).map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => setFilter(key)}
-                className={`flex-1 py-2 rounded-[10px] text-[13px] font-semibold transition-all ${
+                className={`flex-1 py-2 rounded-xl text-[13px] font-semibold transition-all ${
                   filter === key
-                    ? "bg-white text-gray-800 shadow-sm"
+                    ? "bg-white text-green-700 shadow-sm"
                     : "text-gray-400"
                 }`}
               >
@@ -534,14 +534,14 @@ export default function RecordsView() {
                 <div className="flex items-center gap-1 ml-2 shrink-0 mt-1">
                   <button
                     onClick={() => setEditTarget({ type: "meal", data: { ...m } })}
-                    className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-600 active:bg-gray-200 text-[13px] border border-gray-100"
+                    className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 text-[13px] border border-green-100"
                   >
                     ✎
                   </button>
                   <button
                     onClick={() => handleDelete("meal", m.id)}
                     disabled={deleting === m.id}
-                    className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 active:bg-gray-200 text-[13px] border border-gray-100"
+                    className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center text-red-400 active:bg-red-100 text-[13px] border border-red-100"
                   >
                     {deleting === m.id ? "…" : "✕"}
                   </button>
@@ -570,14 +570,14 @@ export default function RecordsView() {
                 <div className="flex items-center gap-1 ml-2 shrink-0 mt-1">
                   <button
                     onClick={() => setEditTarget({ type: "exercise", data: { ...e } })}
-                    className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-600 active:bg-gray-200 text-[13px] border border-gray-100"
+                    className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 text-[13px] border border-green-100"
                   >
                     ✎
                   </button>
                   <button
                     onClick={() => handleDelete("exercise", e.id)}
                     disabled={deleting === e.id}
-                    className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 active:bg-gray-200 text-[13px] border border-gray-100"
+                    className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center text-red-400 active:bg-red-100 text-[13px] border border-red-100"
                   >
                     {deleting === e.id ? "…" : "✕"}
                   </button>
@@ -597,14 +597,14 @@ export default function RecordsView() {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setEditTarget({ type: "weight", data: { ...w } })}
-                    className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-600 active:bg-gray-200 text-[13px] border border-gray-100"
+                    className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 text-[13px] border border-green-100"
                   >
                     ✎
                   </button>
                   <button
                     onClick={() => handleDelete("weight", w.id)}
                     disabled={deleting === w.id}
-                    className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 active:bg-gray-200 text-[13px] border border-gray-100"
+                    className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center text-red-400 active:bg-red-100 text-[13px] border border-red-100"
                   >
                     {deleting === w.id ? "…" : "✕"}
                   </button>
