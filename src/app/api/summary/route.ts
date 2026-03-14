@@ -4,7 +4,7 @@ import { getSupabase } from "@/lib/supabase";
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const range = searchParams.get("range") || "7";
-  const days = parseInt(range);
+  const days = Math.max(parseInt(range), 30); // カレンダー用に最低30日取得
   const startDate = new Date(Date.now() - days * 86400000)
     .toISOString()
     .split("T")[0];
@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
       fat: number;
       burned: number;
       weight?: number;
+      hasExercise?: boolean;
     };
     const dailyStats: Record<string, DayStat> = {};
 
@@ -71,6 +72,7 @@ export async function GET(req: NextRequest) {
       (e: { date: string; calories_burned?: number }) => {
         const day = ensureDay(e.date);
         day.burned += e.calories_burned || 0;
+        day.hasExercise = true;
       }
     );
 

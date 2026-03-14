@@ -281,6 +281,10 @@ export default function RecordsView() {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
+  const [memo, setMemo] = useState("");
+  const [memoSaved, setMemoSaved] = useState("");
+  const [memoEditing, setMemoEditing] = useState(false);
+  const [memoSaving, setMemoSaving] = useState(false);
 
   const fetchRecords = useCallback(() => {
     setLoading(true);
@@ -293,6 +297,16 @@ export default function RecordsView() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+    // メモも取得
+    fetch(`/api/memos?date=${date}`)
+      .then((r) => r.json())
+      .then((memos) => {
+        const m = memos?.[0]?.content || "";
+        setMemo(m);
+        setMemoSaved(m);
+        setMemoEditing(false);
+      })
+      .catch(() => {});
   }, [date]);
 
   useEffect(() => {
@@ -584,6 +598,72 @@ export default function RecordsView() {
             </div>
           </div>
         )}
+
+        {/* メモ */}
+        <div className="bg-white rounded-2xl p-4 border border-gray-200/60">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[11px] text-gray-400 font-medium flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                <path d="M2.5 3A1.5 1.5 0 001 4.5v4A1.5 1.5 0 002.5 10h6A1.5 1.5 0 0010 8.5v-4A1.5 1.5 0 008.5 3h-6zm11 2A1.5 1.5 0 0012 6.5v7a1.5 1.5 0 001.5 1.5h4a1.5 1.5 0 001.5-1.5v-7A1.5 1.5 0 0017.5 5h-4zm-10 7A1.5 1.5 0 002 13.5v2A1.5 1.5 0 003.5 17h5A1.5 1.5 0 0010 15.5v-2A1.5 1.5 0 008.5 12h-5z" />
+              </svg>
+              メモ
+            </div>
+            {!memoEditing && memoSaved && (
+              <button
+                onClick={() => setMemoEditing(true)}
+                className="text-[11px] text-gray-400 active:text-green-600"
+              >
+                編集
+              </button>
+            )}
+          </div>
+          {memoEditing || !memoSaved ? (
+            <div className="space-y-2">
+              <textarea
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+                placeholder="今日のメモ..."
+                className="w-full text-[13px] text-gray-700 bg-gray-50 rounded-xl p-3 border border-gray-200/60 resize-none focus:outline-none focus:ring-1 focus:ring-green-300"
+                rows={2}
+              />
+              <div className="flex justify-end gap-2">
+                {memoSaved && (
+                  <button
+                    onClick={() => { setMemo(memoSaved); setMemoEditing(false); }}
+                    className="text-[12px] text-gray-400 px-3 py-1"
+                  >
+                    キャンセル
+                  </button>
+                )}
+                <button
+                  onClick={async () => {
+                    if (!memo.trim()) return;
+                    setMemoSaving(true);
+                    try {
+                      await fetch("/api/memos", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ date, content: memo }),
+                      });
+                      setMemoSaved(memo);
+                      setMemoEditing(false);
+                    } finally {
+                      setMemoSaving(false);
+                    }
+                  }}
+                  disabled={memoSaving || !memo.trim()}
+                  className="text-[12px] bg-green-500 text-white px-3 py-1 rounded-lg disabled:opacity-50"
+                >
+                  {memoSaving ? "保存中..." : "保存"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-[13px] text-gray-700 leading-relaxed whitespace-pre-wrap">
+              {memoSaved}
+            </div>
+          )}
+        </div>
 
         {/* フィルタータブ + 追加ボタン */}
         <div className="flex items-center gap-2">

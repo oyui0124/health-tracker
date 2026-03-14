@@ -52,6 +52,7 @@ type DailyStats = Record<
     fat: number;
     burned: number;
     weight?: number;
+    hasExercise?: boolean;
   }
 >;
 
@@ -76,6 +77,7 @@ export default function StatsView() {
   const [range, setRange] = useState(7);
   const [loading, setLoading] = useState(true);
   const [chartMode, setChartMode] = useState<ChartMode>("net");
+  const [calendarMode, setCalendarMode] = useState<"calorie" | "exercise">("calorie");
 
   useEffect(() => {
     setLoading(true);
@@ -149,7 +151,7 @@ export default function StatsView() {
   })();
 
   // 達成カレンダーデータ
-  const calendarDays = buildCalendarDays(data.dailyStats, data.goal);
+  const calendarDays = buildCalendarDays(data.dailyStats, data.goal, calendarMode);
   const actual = calendarDays.filter((d) => !d.blank);
   const goodCount = actual.filter((d) => d.status === "good").length;
   const recordedCount = actual.filter((d) => d.status !== "nodata").length;
@@ -280,16 +282,39 @@ export default function StatsView() {
         )}
 
         {/* 達成カレンダー */}
-        {data.goal && calendarDays.length > 0 && (
+        {(data.goal || calendarMode === "exercise") && calendarDays.length > 0 && (
           <div className="bg-white rounded-2xl p-3 border border-gray-200/60 flex-1 min-w-0">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-[11px] text-gray-400 font-medium flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd" /></svg>
-                達成カレンダー
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCalendarMode("calorie")}
+                  className={`text-[11px] font-medium px-2 py-0.5 rounded-md transition-colors ${
+                    calendarMode === "calorie"
+                      ? "bg-green-50 text-green-600"
+                      : "text-gray-400"
+                  }`}
+                >
+                  カロリー
+                </button>
+                <button
+                  onClick={() => setCalendarMode("exercise")}
+                  className={`text-[11px] font-medium px-2 py-0.5 rounded-md transition-colors ${
+                    calendarMode === "exercise"
+                      ? "bg-blue-50 text-blue-600"
+                      : "text-gray-400"
+                  }`}
+                >
+                  運動
+                </button>
               </div>
               <div className="flex items-center gap-2 text-[11px]">
-                {streak > 0 && <span className="text-green-600 font-bold">{streak}日連続</span>}
-                <span className="bg-green-50 text-green-600 font-bold px-1.5 py-0.5 rounded-md">{rate}%</span>
+                {calendarMode === "calorie" && streak > 0 && <span className="text-green-600 font-bold">{streak}日連続</span>}
+                {calendarMode === "calorie" && <span className="bg-green-50 text-green-600 font-bold px-1.5 py-0.5 rounded-md">{rate}%</span>}
+                {calendarMode === "exercise" && (
+                  <span className="bg-blue-50 text-blue-600 font-bold px-1.5 py-0.5 rounded-md">
+                    {actual.filter(d => d.status === "good").length}日
+                  </span>
+                )}
               </div>
             </div>
             <div className="overflow-hidden">
@@ -304,11 +329,15 @@ export default function StatsView() {
                     {day.blank ? null : (
                       <div
                         className={`w-full h-full rounded-md flex items-center justify-center text-[9px] font-bold ${
-                          day.status === "good"
-                            ? "bg-green-100 text-green-600 ring-1 ring-green-300/50"
-                            : day.status === "over"
-                              ? "bg-red-50 text-red-400 ring-1 ring-red-200/50"
-                              : "bg-gray-50 text-gray-300"
+                          calendarMode === "exercise"
+                            ? (day.status === "good"
+                              ? "bg-blue-100 text-blue-600 ring-1 ring-blue-300/50"
+                              : "bg-gray-50 text-gray-300")
+                            : (day.status === "good"
+                              ? "bg-green-100 text-green-600 ring-1 ring-green-300/50"
+                              : day.status === "over"
+                                ? "bg-red-50 text-red-400 ring-1 ring-red-200/50"
+                                : "bg-gray-50 text-gray-300")
                         }`}
                       >
                         {day.dayNum}
@@ -319,8 +348,14 @@ export default function StatsView() {
               </div>
             </div>
             <div className="flex gap-3 mt-2 text-[9px] text-gray-400">
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-green-100 ring-1 ring-green-300/50 inline-block" /> 達成</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-50 ring-1 ring-red-200/50 inline-block" /> 超過</span>
+              {calendarMode === "calorie" ? (
+                <>
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-green-100 ring-1 ring-green-300/50 inline-block" /> 達成</span>
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-50 ring-1 ring-red-200/50 inline-block" /> 超過</span>
+                </>
+              ) : (
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-blue-100 ring-1 ring-blue-300/50 inline-block" /> 運動した</span>
+              )}
             </div>
           </div>
         )}
@@ -484,42 +519,47 @@ export default function StatsView() {
 
 function buildCalendarDays(
   dailyStats: DailyStats,
-  goal: Goal | null
+  goal: Goal | null,
+  mode: "calorie" | "exercise" = "calorie"
 ): { dayNum: number; status: "good" | "over" | "nodata" | "future"; label: string; blank?: boolean }[] {
-  if (!goal) return [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  const dates = Object.keys(dailyStats).sort();
-  if (dates.length === 0) return [];
+  // 30日前から表示
+  const startDate = new Date(today);
+  startDate.setDate(startDate.getDate() - 29);
 
-  const firstDate = new Date(dates[0] + "T00:00:00");
-  const lastDate = new Date(dates[dates.length - 1] + "T00:00:00");
-
-  const startDay = new Date(firstDate);
+  // 月曜始まりに揃える
+  const startDay = new Date(startDate);
   const dow = startDay.getDay();
   const mondayOffset = dow === 0 ? -6 : 1 - dow;
   startDay.setDate(startDay.getDate() + mondayOffset);
 
   const result: { dayNum: number; status: "good" | "over" | "nodata" | "future"; label: string; blank?: boolean }[] = [];
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
 
   const current = new Date(startDay);
-  while (current <= lastDate || current <= today) {
+  while (current <= today) {
     const dateStr = current.toISOString().split("T")[0];
     const dayNum = current.getDate();
 
-    if (current < firstDate) {
+    if (current < startDate) {
       result.push({ dayNum, status: "nodata", label: "", blank: true });
-    } else if (current > today) {
-      break;
     } else {
       const stats = dailyStats[dateStr];
-      if (stats && stats.calories > 0) {
-        const net = stats.calories - stats.burned;
-        const status = net <= goal.daily_calorie_target ? "good" : "over";
-        result.push({ dayNum, status, label: `${dateStr}: ${net}/${goal.daily_calorie_target} kcal` });
+      if (mode === "exercise") {
+        if (stats?.hasExercise) {
+          result.push({ dayNum, status: "good", label: `${dateStr}: 運動した` });
+        } else {
+          result.push({ dayNum, status: "nodata", label: dateStr });
+        }
       } else {
-        result.push({ dayNum, status: "nodata", label: dateStr });
+        if (goal && stats && stats.calories > 0) {
+          const net = stats.calories - stats.burned;
+          const status = net <= goal.daily_calorie_target ? "good" : "over";
+          result.push({ dayNum, status, label: `${dateStr}: ${net}/${goal.daily_calorie_target} kcal` });
+        } else {
+          result.push({ dayNum, status: "nodata", label: dateStr });
+        }
       }
     }
 
