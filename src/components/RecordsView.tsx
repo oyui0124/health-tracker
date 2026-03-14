@@ -191,7 +191,7 @@ function getWeekDays(selectedDate: string): { date: string; dayLabel: string; da
 }
 
 // スワイプで削除カード
-function SwipeableCard({ children, onDelete, onEdit }: { children: React.ReactNode; onDelete: () => void; onEdit?: () => void }) {
+function SwipeableCard({ children, onDelete }: { children: React.ReactNode; onDelete: () => void }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const startX = useRef(0);
   const currentX = useRef(0);
@@ -207,8 +207,7 @@ function SwipeableCard({ children, onDelete, onEdit }: { children: React.ReactNo
   const handleMove = (clientX: number) => {
     if (!swiping.current) return;
     const diff = clientX - startX.current;
-    // 左スワイプのみ
-    currentX.current = Math.min(0, Math.max(-120, diff));
+    currentX.current = Math.min(0, Math.max(-80, diff));
     if (cardRef.current) {
       cardRef.current.style.transform = `translateX(${currentX.current}px)`;
     }
@@ -218,44 +217,29 @@ function SwipeableCard({ children, onDelete, onEdit }: { children: React.ReactNo
     swiping.current = false;
     if (!cardRef.current) return;
     cardRef.current.style.transition = "transform 0.3s ease-out";
-    if (currentX.current < -60) {
-      // スワイプ十分 → 削除ボタンを見せる
-      cardRef.current.style.transform = "translateX(-80px)";
+    if (currentX.current < -40) {
+      cardRef.current.style.transform = "translateX(-64px)";
     } else {
-      cardRef.current.style.transform = "translateX(0)";
-    }
-  };
-
-  const resetSwipe = () => {
-    if (cardRef.current) {
-      cardRef.current.style.transition = "transform 0.3s ease-out";
       cardRef.current.style.transform = "translateX(0)";
     }
   };
 
   return (
     <div className="relative overflow-hidden rounded-2xl">
-      {/* 背景のアクションボタン */}
+      {/* 削除ボタン */}
       <div className="absolute right-0 top-0 bottom-0 flex items-stretch">
-        {onEdit && (
-          <button
-            onClick={() => { resetSwipe(); onEdit(); }}
-            className="w-[40px] bg-blue-500 flex items-center justify-center text-white"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M13.488 2.513a1.75 1.75 0 00-2.475 0L6.75 6.774a2.75 2.75 0 00-.596.892l-.848 2.047a.75.75 0 00.98.98l2.047-.848a2.75 2.75 0 00.892-.596l4.261-4.262a1.75 1.75 0 000-2.474z" /><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0114 9v2.25A2.75 2.75 0 0111.25 14h-6.5A2.75 2.75 0 012 11.25v-6.5A2.75 2.75 0 014.75 2H7a.75.75 0 010 1.5H4.75z" /></svg>
-          </button>
-        )}
         <button
           onClick={onDelete}
-          className="w-[40px] bg-red-500 flex items-center justify-center text-white"
+          className="w-[64px] bg-red-500 flex items-center justify-center text-white text-[11px] font-semibold gap-1 flex-col"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 000 1.5h.3l.815 8.15A1.5 1.5 0 005.357 15h5.285a1.5 1.5 0 001.493-1.35l.815-8.15h.3a.75.75 0 000-1.5H11v-.75A2.25 2.25 0 008.75 1h-1.5A2.25 2.25 0 005 3.25zm2.25-.75a.75.75 0 00-.75.75V4h3v-.75a.75.75 0 00-.75-.75h-1.5zM6.05 6a.75.75 0 01.787.713l.275 5.5a.75.75 0 01-1.498.075l-.275-5.5A.75.75 0 016.05 6zm3.9 0a.75.75 0 01.712.787l-.275 5.5a.75.75 0 01-1.498-.075l.275-5.5a.75.75 0 01.786-.711z" clipRule="evenodd" /></svg>
+          削除
         </button>
       </div>
       {/* スワイプするカード本体 */}
       <div
         ref={cardRef}
-        className="relative bg-white rounded-2xl p-4 border border-gray-100"
+        className="relative bg-white rounded-2xl p-4 shadow-sm"
         onTouchStart={(e) => handleStart(e.touches[0].clientX)}
         onTouchMove={(e) => handleMove(e.touches[0].clientX)}
         onTouchEnd={handleEnd}
@@ -474,7 +458,7 @@ export default function RecordsView() {
 
       <div className="px-4 space-y-3.5 pb-28">
         {/* カロリーサマリーカード */}
-        <div className="bg-white rounded-2xl p-5 border border-gray-200/60">
+        <div className="bg-white rounded-2xl p-5 shadow-sm">
           <div className="flex items-baseline justify-between mb-1.5">
             <div>
               <span className="text-[34px] font-extrabold text-gray-900 tracking-tight">{totalCalories - totalBurned}</span>
@@ -512,7 +496,7 @@ export default function RecordsView() {
         {/* 体重 + PFC 横並び */}
         <div className="flex gap-3">
           {/* 体重カード */}
-          <div className="bg-white rounded-2xl p-4 border border-gray-200/60 flex-shrink-0 w-[120px]">
+          <div className="bg-white rounded-2xl p-4 shadow-sm flex-shrink-0 w-[120px]">
             <div className="text-[11px] text-gray-400 font-medium mb-1.5 flex items-center gap-1">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M10 1a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 1zM5.05 3.05a.75.75 0 011.06 0l1.062 1.06A.75.75 0 116.11 5.173L5.05 4.11a.75.75 0 010-1.06zm9.9 0a.75.75 0 010 1.06l-1.06 1.062a.75.75 0 01-1.062-1.061l1.061-1.06a.75.75 0 011.06 0zM3 8a7 7 0 1114 0A7 7 0 013 8zm4-1a.75.75 0 000 1.5h2.25V10a.75.75 0 001.5 0V8.5H13a.75.75 0 000-1.5h-2.25V5.5a.75.75 0 00-1.5 0V7H7z" clipRule="evenodd" /></svg>
               体重
@@ -526,7 +510,7 @@ export default function RecordsView() {
           </div>
 
           {/* PFCカード */}
-          <div className="bg-white rounded-2xl p-4 border border-gray-200/60 flex-1">
+          <div className="bg-white rounded-2xl p-4 shadow-sm flex-1">
             <div className="text-[11px] text-gray-400 font-medium mb-2 flex items-center gap-1">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path d="M12.5 16.5a.75.75 0 01-.75-.75v-9.5a.75.75 0 011.5 0v9.5a.75.75 0 01-.75.75zM7.5 16.5a.75.75 0 01-.75-.75V10a.75.75 0 011.5 0v5.75a.75.75 0 01-.75.75zM10 16.5a.75.75 0 01-.75-.75v-7.5a.75.75 0 011.5 0v7.5a.75.75 0 01-.75.75z" /></svg>
               PFCバランス
@@ -624,54 +608,82 @@ export default function RecordsView() {
         <div className="space-y-3">
           {/* 食事 */}
           {filteredMeals.map((m) => (
-            <SwipeableCard key={m.id} onDelete={() => handleDelete("meal", m.id)} onEdit={() => setEditTarget({ type: "meal", data: { ...m } })}>
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M3.105 2.289a.75.75 0 00-.826.95l1.414 4.925A1.5 1.5 0 005.135 9.25h.757l-.642 6.77a.75.75 0 001.493.142L7.5 9.25h.322a1.5 1.5 0 001.442-1.086l1.414-4.925a.75.75 0 00-.826-.95 27.11 27.11 0 00-6.747 0zM13.5 2.5a.75.75 0 00-1.5 0v5.846a1.5 1.5 0 001.122 1.451L13.5 17a.75.75 0 001.5 0V9.797a1.5 1.5 0 001.122-1.451V2.5a.75.75 0 00-1.5 0v4.5h-.622V2.5z" /></svg>
-                </span>
-                <span className="text-[11px] font-semibold text-green-700">
-                  {MEAL_TYPE_LABEL[m.meal_type] || m.meal_type}
-                </span>
-              </div>
-              <div className="text-[15px] font-semibold text-gray-900 mb-1.5 leading-snug">
-                {m.description}
-              </div>
-              <div className="flex gap-3 text-[12px]">
-                <span className="font-bold text-green-600">{m.calories} kcal</span>
-                <span className="text-gray-500">P:{m.protein || 0}g</span>
-                <span className="text-gray-500">F:{m.fat || 0}g</span>
-                <span className="text-gray-500">C:{m.carbs || 0}g</span>
+            <SwipeableCard key={m.id} onDelete={() => handleDelete("meal", m.id)}>
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M3.105 2.289a.75.75 0 00-.826.95l1.414 4.925A1.5 1.5 0 005.135 9.25h.757l-.642 6.77a.75.75 0 001.493.142L7.5 9.25h.322a1.5 1.5 0 001.442-1.086l1.414-4.925a.75.75 0 00-.826-.95 27.11 27.11 0 00-6.747 0zM13.5 2.5a.75.75 0 00-1.5 0v5.846a1.5 1.5 0 001.122 1.451L13.5 17a.75.75 0 001.5 0V9.797a1.5 1.5 0 001.122-1.451V2.5a.75.75 0 00-1.5 0v4.5h-.622V2.5z" /></svg>
+                    </span>
+                    <span className="text-[11px] font-semibold text-green-700">
+                      {MEAL_TYPE_LABEL[m.meal_type] || m.meal_type}
+                    </span>
+                  </div>
+                  <div className="text-[15px] font-semibold text-gray-900 mb-1.5 leading-snug">
+                    {m.description}
+                  </div>
+                  <div className="flex gap-3 text-[12px]">
+                    <span className="font-bold text-green-600">{m.calories} kcal</span>
+                    <span className="text-gray-500">P:{m.protein || 0}g</span>
+                    <span className="text-gray-500">F:{m.fat || 0}g</span>
+                    <span className="text-gray-500">C:{m.carbs || 0}g</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setEditTarget({ type: "meal", data: { ...m } })}
+                  className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 border border-green-100 ml-2 shrink-0 mt-1"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M13.488 2.513a1.75 1.75 0 00-2.475 0L6.75 6.774a2.75 2.75 0 00-.596.892l-.848 2.047a.75.75 0 00.98.98l2.047-.848a2.75 2.75 0 00.892-.596l4.261-4.262a1.75 1.75 0 000-2.474z" /><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0114 9v2.25A2.75 2.75 0 0111.25 14h-6.5A2.75 2.75 0 012 11.25v-6.5A2.75 2.75 0 014.75 2H7a.75.75 0 010 1.5H4.75z" /></svg>
+                </button>
               </div>
             </SwipeableCard>
           ))}
 
           {/* 運動 */}
           {filteredExercises.map((e) => (
-            <SwipeableCard key={e.id} onDelete={() => handleDelete("exercise", e.id)} onEdit={() => setEditTarget({ type: "exercise", data: { ...e } })}>
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M6.75 2.5A1.25 1.25 0 108 3.75 1.25 1.25 0 006.75 2.5zM3.5 7.75a.75.75 0 01.75-.75h2.5a.75.75 0 01.624.334L8.68 9.312l1.57-1.57a.75.75 0 011.06 0l2.5 2.5a.75.75 0 11-1.06 1.06L10.5 9.06l-1.72 1.72a.75.75 0 01-1.156-.176L6.036 8.5H4.25a.75.75 0 01-.75-.75zM2.75 12a.75.75 0 000 1.5h3.5l1.898 2.848a.75.75 0 001.254-.832L7.25 12H2.75zm8 0a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5z" /></svg>
-                </span>
-                <span className="text-[11px] font-semibold text-orange-600">運動</span>
-              </div>
-              <div className="text-[15px] font-semibold text-gray-900 mb-1.5 leading-snug">
-                {e.description}
-              </div>
-              <div className="flex gap-3 text-[12px]">
-                <span className="font-bold text-orange-600">-{e.calories_burned} kcal</span>
-                <span className="text-gray-500">{e.duration_minutes}分</span>
+            <SwipeableCard key={e.id} onDelete={() => handleDelete("exercise", e.id)}>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M6.75 2.5A1.25 1.25 0 108 3.75 1.25 1.25 0 006.75 2.5zM3.5 7.75a.75.75 0 01.75-.75h2.5a.75.75 0 01.624.334L8.68 9.312l1.57-1.57a.75.75 0 011.06 0l2.5 2.5a.75.75 0 11-1.06 1.06L10.5 9.06l-1.72 1.72a.75.75 0 01-1.156-.176L6.036 8.5H4.25a.75.75 0 01-.75-.75zM2.75 12a.75.75 0 000 1.5h3.5l1.898 2.848a.75.75 0 001.254-.832L7.25 12H2.75zm8 0a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5z" /></svg>
+                    </span>
+                    <span className="text-[11px] font-semibold text-orange-600">運動</span>
+                  </div>
+                  <div className="text-[15px] font-semibold text-gray-900 mb-1.5 leading-snug">
+                    {e.description}
+                  </div>
+                  <div className="flex gap-3 text-[12px]">
+                    <span className="font-bold text-orange-600">-{e.calories_burned} kcal</span>
+                    <span className="text-gray-500">{e.duration_minutes}分</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setEditTarget({ type: "exercise", data: { ...e } })}
+                  className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 border border-green-100 ml-2 shrink-0 mt-1"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M13.488 2.513a1.75 1.75 0 00-2.475 0L6.75 6.774a2.75 2.75 0 00-.596.892l-.848 2.047a.75.75 0 00.98.98l2.047-.848a2.75 2.75 0 00.892-.596l4.261-4.262a1.75 1.75 0 000-2.474z" /><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0114 9v2.25A2.75 2.75 0 0111.25 14h-6.5A2.75 2.75 0 012 11.25v-6.5A2.75 2.75 0 014.75 2H7a.75.75 0 010 1.5H4.75z" /></svg>
+                </button>
               </div>
             </SwipeableCard>
           ))}
 
           {/* 体重 */}
           {filter === "all" && weights.map((w) => (
-            <SwipeableCard key={w.id} onDelete={() => handleDelete("weight", w.id)} onEdit={() => setEditTarget({ type: "weight", data: { ...w } })}>
-              <div className="flex items-center gap-2.5">
-                <span className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10 1a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 1zM5.05 3.05a.75.75 0 011.06 0l1.062 1.06A.75.75 0 116.11 5.173L5.05 4.11a.75.75 0 010-1.06zm9.9 0a.75.75 0 010 1.06l-1.06 1.062a.75.75 0 01-1.062-1.061l1.061-1.06a.75.75 0 011.06 0zM3 8a7 7 0 1114 0A7 7 0 013 8zm4-1a.75.75 0 000 1.5h2.25V10a.75.75 0 001.5 0V8.5H13a.75.75 0 000-1.5h-2.25V5.5a.75.75 0 00-1.5 0V7H7z" clipRule="evenodd" /></svg>
-                </span>
-                <span className="text-[15px] font-semibold text-gray-900">{w.weight} kg</span>
+            <SwipeableCard key={w.id} onDelete={() => handleDelete("weight", w.id)}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10 1a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 1zM5.05 3.05a.75.75 0 011.06 0l1.062 1.06A.75.75 0 116.11 5.173L5.05 4.11a.75.75 0 010-1.06zm9.9 0a.75.75 0 010 1.06l-1.06 1.062a.75.75 0 01-1.062-1.061l1.061-1.06a.75.75 0 011.06 0zM3 8a7 7 0 1114 0A7 7 0 013 8zm4-1a.75.75 0 000 1.5h2.25V10a.75.75 0 001.5 0V8.5H13a.75.75 0 000-1.5h-2.25V5.5a.75.75 0 00-1.5 0V7H7z" clipRule="evenodd" /></svg>
+                  </span>
+                  <span className="text-[15px] font-semibold text-gray-900">{w.weight} kg</span>
+                </div>
+                <button
+                  onClick={() => setEditTarget({ type: "weight", data: { ...w } })}
+                  className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 border border-green-100"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M13.488 2.513a1.75 1.75 0 00-2.475 0L6.75 6.774a2.75 2.75 0 00-.596.892l-.848 2.047a.75.75 0 00.98.98l2.047-.848a2.75 2.75 0 00.892-.596l4.261-4.262a1.75 1.75 0 000-2.474z" /><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0114 9v2.25A2.75 2.75 0 0111.25 14h-6.5A2.75 2.75 0 012 11.25v-6.5A2.75 2.75 0 014.75 2H7a.75.75 0 010 1.5H4.75z" /></svg>
+                </button>
               </div>
             </SwipeableCard>
           ))}
