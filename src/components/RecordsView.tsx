@@ -204,6 +204,8 @@ export default function RecordsView() {
   const [addType, setAddType] = useState<"meal" | "exercise" | "weight" | null>(null);
   const [filter, setFilter] = useState<"all" | "meal" | "exercise">("all");
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
 
   const fetchRecords = useCallback(() => {
     setLoading(true);
@@ -266,6 +268,21 @@ export default function RecordsView() {
     });
     setEditTarget(null);
     fetchRecords();
+  };
+
+  const handleDeleteAll = async () => {
+    setDeletingAll(true);
+    try {
+      await fetch("/api/records", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date }),
+      });
+      fetchRecords();
+    } finally {
+      setDeletingAll(false);
+      setShowDeleteAllConfirm(false);
+    }
   };
 
   const isToday = date === getLocalDate();
@@ -647,6 +664,37 @@ export default function RecordsView() {
             </div>
           )}
         </div>
+
+        {/* 全部消すボタン */}
+        {(meals.length > 0 || exercises.length > 0 || weights.length > 0) && (
+          <div className="pt-4 pb-2 flex justify-center">
+            {showDeleteAllConfirm ? (
+              <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
+                <span className="text-[13px] text-red-600 font-medium">この日の記録を全て削除しますか？</span>
+                <button
+                  onClick={handleDeleteAll}
+                  disabled={deletingAll}
+                  className="px-3 py-1.5 text-[12px] font-semibold text-white bg-red-500 rounded-lg active:bg-red-600 disabled:opacity-50"
+                >
+                  {deletingAll ? "削除中..." : "削除する"}
+                </button>
+                <button
+                  onClick={() => setShowDeleteAllConfirm(false)}
+                  className="px-3 py-1.5 text-[12px] text-gray-500 active:text-gray-700"
+                >
+                  やめる
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowDeleteAllConfirm(true)}
+                className="text-[12px] text-gray-400 active:text-red-500 transition-colors py-2 px-4"
+              >
+                この日の記録を全部消す
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="h-4" />
       </div>

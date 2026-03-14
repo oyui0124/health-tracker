@@ -23,6 +23,9 @@ type PendingEntry = {
   calories_burned?: number;
   id?: string;
   updates?: Record<string, unknown>;
+  _saved?: boolean;
+  _dismissed?: boolean;
+  _editing?: boolean;
 };
 
 const STORAGE_KEY = "health-tracker-chat";
@@ -115,16 +118,7 @@ export default function ChatView() {
       });
       const data = await res.json();
       if (data.ok) {
-        // 保存成功: pendingEntriesからこのエントリを除去
-        setMessages((prev) =>
-          prev.map((msg, i) => {
-            if (i !== msgIndex || !msg.pendingEntries) return msg;
-            const updated = msg.pendingEntries.map((e, j) =>
-              j === entryIndex ? { ...e, _saved: true } : e
-            ) as PendingEntry[];
-            return { ...msg, pendingEntries: updated };
-          })
-        );
+        updateEntry(msgIndex, entryIndex, { _saved: true, _editing: false });
       }
     } catch {
       // fail silently
@@ -135,6 +129,24 @@ export default function ChatView() {
         return next;
       });
     }
+  };
+
+  // エントリを更新
+  const updateEntry = (msgIndex: number, entryIndex: number, updates: Partial<PendingEntry>) => {
+    setMessages((prev) =>
+      prev.map((msg, i) => {
+        if (i !== msgIndex || !msg.pendingEntries) return msg;
+        const updated = msg.pendingEntries.map((e, j) =>
+          j === entryIndex ? { ...e, ...updates } : e
+        ) as PendingEntry[];
+        return { ...msg, pendingEntries: updated };
+      })
+    );
+  };
+
+  // エントリを却下
+  const dismissEntry = (msgIndex: number, entryIndex: number) => {
+    updateEntry(msgIndex, entryIndex, { _dismissed: true });
   };
 
   const sendMessage = async () => {
@@ -275,9 +287,9 @@ export default function ChatView() {
   const entryLabel = (e: PendingEntry) => {
     if (e.action === "delete") return `${e.description || "記録"}を削除`;
     if (e.action === "edit") return `${e.description || "記録"}を修正`;
-    if (e.type === "meal") return `${e.description} (${e.calories}kcal)`;
+    if (e.type === "meal") return e.description || "食事";
     if (e.type === "weight") return `体重 ${e.weight}kg`;
-    if (e.type === "exercise") return `${e.description} (-${e.calories_burned}kcal)`;
+    if (e.type === "exercise") return e.description || "運動";
     return "記録";
   };
 
@@ -315,42 +327,150 @@ export default function ChatView() {
                 <div className="max-w-[85%] rounded-2xl border border-green-200 bg-green-50 p-3 space-y-2">
                   <div className="text-[12px] font-semibold text-green-700">記録に追加しますか？</div>
                   {msg.pendingEntries.map((entry, j) => {
-                    const isSaved = (entry as PendingEntry & { _saved?: boolean })._saved;
+                    const isSaved = entry._saved;
+                    const isDismissed = entry._dismissed;
+                    const isEditing = entry._editing;
                     const isSaving = savingEntries.has(`${i}-${j}`);
+
+                    if (isDismissed) {
+                      return (
+                        <div key={j} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-gray-50 border border-gray-200 opacity-50">
+                          <span className="text-lg">{entryIcon(entry)}</span>
+                          <div className="flex-1 text-[13px] text-gray-400 line-through truncate">{entry.description || "記録"}</div>
+                          <span className="text-[11px] text-gray-400">スキップ</span>
+                        </div>
+                      );
+                    }
+
                     return (
-                      <button
-                        key={j}
-                        onClick={() => !isSaved && !isSaving && saveEntry(i, j, entry)}
-                        disabled={isSaved || isSaving}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all ${
-                          isSaved
-                            ? "bg-green-100 border border-green-300"
-                            : isSaving
-                              ? "bg-white border border-gray-200 opacity-60"
-                              : "bg-white border border-gray-200 active:bg-green-50 active:border-green-300"
-                        }`}
-                      >
-                        <span className="text-lg">{entryIcon(entry)}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[13px] font-medium text-gray-800 truncate">
-                            {entryLabel(entry)}
+                      <div key={j} className={`w-full rounded-xl transition-all ${
+                        isSaved
+                          ? "bg-green-100 border border-green-300"
+                          : "bg-white border border-gray-200"
+                      }`}>
+                        <div className="flex items-center gap-2.5 px-3 py-2.5">
+                          <span className="text-lg">{entryIcon(entry)}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[13px] font-medium text-gray-800 truncate">
+                              {entryLabel(entry)}
+                            </div>
+                            {entry.type === "meal" && (entry.protein != null || entry.calories != null) && (
+                              <div className="text-[11px] text-gray-400 mt-0.5">
+                                {entry.calories != null && <span className="font-medium text-gray-500">{entry.calories}kcal</span>}
+                                {entry.protein != null && <span className="ml-1.5">P:{entry.protein}g</span>}
+                                {entry.fat != null && <span className="ml-1">F:{entry.fat}g</span>}
+                                {entry.carbs != null && <span className="ml-1">C:{entry.carbs}g</span>}
+                              </div>
+                            )}
+                            {entry.type === "exercise" && entry.calories_burned != null && (
+                              <div className="text-[11px] text-gray-400 mt-0.5">
+                                {entry.duration_minutes && <span>{entry.duration_minutes}分</span>}
+                                <span className="ml-1.5">-{entry.calories_burned}kcal</span>
+                              </div>
+                            )}
                           </div>
-                          {entry.type === "meal" && entry.protein != null && (
-                            <div className="text-[11px] text-gray-400">
-                              P:{entry.protein}g F:{entry.fat}g C:{entry.carbs}g
+                          {isSaved ? (
+                            <span className="text-[12px] font-semibold text-green-600 shrink-0">追加済み ✓</span>
+                          ) : isSaving ? (
+                            <span className="text-[12px] text-gray-400 shrink-0">保存中...</span>
+                          ) : (
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                onClick={() => dismissEntry(i, j)}
+                                className="px-2 py-1 text-[11px] text-gray-400 active:text-red-500 rounded-lg active:bg-red-50"
+                              >
+                                やめる
+                              </button>
+                              <button
+                                onClick={() => updateEntry(i, j, { _editing: !isEditing })}
+                                className="px-2 py-1 text-[11px] text-gray-500 active:text-blue-600 rounded-lg active:bg-blue-50"
+                              >
+                                編集
+                              </button>
+                              <button
+                                onClick={() => saveEntry(i, j, entry)}
+                                className="px-2.5 py-1 text-[12px] font-semibold text-green-600 active:bg-green-100 rounded-lg"
+                              >
+                                追加
+                              </button>
                             </div>
                           )}
                         </div>
-                        <span className="text-[12px] font-semibold shrink-0">
-                          {isSaved ? (
-                            <span className="text-green-600">追加済み ✓</span>
-                          ) : isSaving ? (
-                            <span className="text-gray-400">保存中...</span>
-                          ) : (
-                            <span className="text-green-600">追加</span>
-                          )}
-                        </span>
-                      </button>
+                        {/* インライン編集フォーム */}
+                        {isEditing && !isSaved && (
+                          <div className="px-3 pb-3 pt-1 border-t border-gray-100 space-y-2">
+                            {entry.type === "meal" && (
+                              <>
+                                <input
+                                  type="text"
+                                  defaultValue={entry.description || ""}
+                                  onChange={(e) => updateEntry(i, j, { description: e.target.value })}
+                                  className="w-full text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-green-400"
+                                  placeholder="食事内容"
+                                />
+                                <div className="flex gap-2">
+                                  <input
+                                    type="number"
+                                    defaultValue={entry.calories || ""}
+                                    onChange={(e) => updateEntry(i, j, { calories: Number(e.target.value) || 0 })}
+                                    className="flex-1 text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-green-400"
+                                    placeholder="kcal"
+                                  />
+                                  <input
+                                    type="number"
+                                    defaultValue={entry.protein || ""}
+                                    onChange={(e) => updateEntry(i, j, { protein: Number(e.target.value) || 0 })}
+                                    className="flex-1 text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-green-400"
+                                    placeholder="P(g)"
+                                  />
+                                  <input
+                                    type="number"
+                                    defaultValue={entry.fat || ""}
+                                    onChange={(e) => updateEntry(i, j, { fat: Number(e.target.value) || 0 })}
+                                    className="flex-1 text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-green-400"
+                                    placeholder="F(g)"
+                                  />
+                                  <input
+                                    type="number"
+                                    defaultValue={entry.carbs || ""}
+                                    onChange={(e) => updateEntry(i, j, { carbs: Number(e.target.value) || 0 })}
+                                    className="flex-1 text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-green-400"
+                                    placeholder="C(g)"
+                                  />
+                                </div>
+                              </>
+                            )}
+                            {entry.type === "weight" && (
+                              <input
+                                type="number"
+                                step="0.1"
+                                defaultValue={entry.weight || ""}
+                                onChange={(e) => updateEntry(i, j, { weight: Number(e.target.value) || 0 })}
+                                className="w-full text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-green-400"
+                                placeholder="体重(kg)"
+                              />
+                            )}
+                            {entry.type === "exercise" && (
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  defaultValue={entry.description || ""}
+                                  onChange={(e) => updateEntry(i, j, { description: e.target.value })}
+                                  className="flex-1 text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-green-400"
+                                  placeholder="運動内容"
+                                />
+                                <input
+                                  type="number"
+                                  defaultValue={entry.calories_burned || ""}
+                                  onChange={(e) => updateEntry(i, j, { calories_burned: Number(e.target.value) || 0 })}
+                                  className="w-20 text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-green-400"
+                                  placeholder="kcal"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>

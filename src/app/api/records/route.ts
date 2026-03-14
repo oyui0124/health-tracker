@@ -86,6 +86,28 @@ export async function DELETE(req: NextRequest) {
   }
 }
 
+// 指定日の全記録を削除
+export async function PUT(req: NextRequest) {
+  try {
+    const { date } = await req.json();
+    if (!date) {
+      return NextResponse.json({ error: "日付が必要です" }, { status: 400 });
+    }
+    const db = getSupabase();
+
+    await Promise.all([
+      db.from("meal_logs").delete().eq("date", date),
+      db.from("exercise_logs").delete().eq("date", date),
+      db.from("weight_logs").delete().eq("date", date),
+    ]);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Records bulk delete error:", error);
+    return NextResponse.json({ error: "一括削除に失敗しました" }, { status: 500 });
+  }
+}
+
 // 記録を編集
 export async function PATCH(req: NextRequest) {
   try {
