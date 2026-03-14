@@ -190,51 +190,66 @@ function getWeekDays(selectedDate: string): { date: string; dayLabel: string; da
   return days;
 }
 
-// スワイプで削除カード
+// スワイプで削除カード（端まで行ったら自動削除）
 function SwipeableCard({ children, onDelete }: { children: React.ReactNode; onDelete: () => void }) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const bgRef = useRef<HTMLDivElement>(null);
   const startX = useRef(0);
   const currentX = useRef(0);
   const swiping = useRef(false);
+  const cardWidth = useRef(0);
 
   const handleStart = (clientX: number) => {
     startX.current = clientX;
     currentX.current = 0;
     swiping.current = true;
-    if (cardRef.current) cardRef.current.style.transition = "none";
+    if (cardRef.current) {
+      cardRef.current.style.transition = "none";
+      cardWidth.current = cardRef.current.offsetWidth;
+    }
   };
 
   const handleMove = (clientX: number) => {
     if (!swiping.current) return;
     const diff = clientX - startX.current;
-    currentX.current = Math.min(0, Math.max(-80, diff));
+    currentX.current = Math.min(0, diff);
     if (cardRef.current) {
       cardRef.current.style.transform = `translateX(${currentX.current}px)`;
+    }
+    // 背景の赤さをスワイプ量に応じて変化
+    if (bgRef.current) {
+      const ratio = Math.min(1, Math.abs(currentX.current) / (cardWidth.current * 0.4));
+      bgRef.current.style.opacity = String(ratio);
     }
   };
 
   const handleEnd = () => {
     swiping.current = false;
     if (!cardRef.current) return;
-    cardRef.current.style.transition = "transform 0.3s ease-out";
-    if (currentX.current < -40) {
-      cardRef.current.style.transform = "translateX(-64px)";
+    // 40%以上スワイプ → 自動削除（飛ばして消える）
+    if (Math.abs(currentX.current) > cardWidth.current * 0.4) {
+      cardRef.current.style.transition = "transform 0.25s ease-out, opacity 0.25s ease-out";
+      cardRef.current.style.transform = `translateX(-${cardWidth.current}px)`;
+      cardRef.current.style.opacity = "0";
+      setTimeout(() => onDelete(), 250);
     } else {
+      cardRef.current.style.transition = "transform 0.3s ease-out";
       cardRef.current.style.transform = "translateX(0)";
+      if (bgRef.current) bgRef.current.style.opacity = "0";
     }
   };
 
   return (
     <div className="relative overflow-hidden rounded-2xl">
-      {/* 削除ボタン */}
-      <div className="absolute right-0 top-0 bottom-0 flex items-stretch">
-        <button
-          onClick={onDelete}
-          className="w-[64px] bg-red-500 flex items-center justify-center text-white text-[11px] font-semibold gap-1 flex-col"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 000 1.5h.3l.815 8.15A1.5 1.5 0 005.357 15h5.285a1.5 1.5 0 001.493-1.35l.815-8.15h.3a.75.75 0 000-1.5H11v-.75A2.25 2.25 0 008.75 1h-1.5A2.25 2.25 0 005 3.25zm2.25-.75a.75.75 0 00-.75.75V4h3v-.75a.75.75 0 00-.75-.75h-1.5zM6.05 6a.75.75 0 01.787.713l.275 5.5a.75.75 0 01-1.498.075l-.275-5.5A.75.75 0 016.05 6zm3.9 0a.75.75 0 01.712.787l-.275 5.5a.75.75 0 01-1.498-.075l.275-5.5a.75.75 0 01.786-.711z" clipRule="evenodd" /></svg>
-          削除
-        </button>
+      {/* 背景: 赤いレイヤー */}
+      <div
+        ref={bgRef}
+        className="absolute inset-0 bg-red-500 rounded-2xl flex items-center justify-end pr-6 opacity-0"
+      >
+        <div className="flex flex-col items-center gap-1 text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 000 1.5h.3l.815 8.15A1.5 1.5 0 005.357 15h5.285a1.5 1.5 0 001.493-1.35l.815-8.15h.3a.75.75 0 000-1.5H11v-.75A2.25 2.25 0 008.75 1h-1.5A2.25 2.25 0 005 3.25zm2.25-.75a.75.75 0 00-.75.75V4h3v-.75a.75.75 0 00-.75-.75h-1.5zM6.05 6a.75.75 0 01.787.713l.275 5.5a.75.75 0 01-1.498.075l-.275-5.5A.75.75 0 016.05 6zm3.9 0a.75.75 0 01.712.787l-.275 5.5a.75.75 0 01-1.498-.075l.275-5.5a.75.75 0 01.786-.711z" clipRule="evenodd" /></svg>
+          <span className="text-[11px] font-semibold">削除</span>
+        </div>
       </div>
       {/* スワイプするカード本体 */}
       <div
@@ -458,7 +473,7 @@ export default function RecordsView() {
 
       <div className="px-4 space-y-3.5 pb-28">
         {/* カロリーサマリーカード */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
+        <div className="bg-gray-50/80 rounded-2xl p-5">
           <div className="flex items-baseline justify-between mb-1.5">
             <div>
               <span className="text-[34px] font-extrabold text-gray-900 tracking-tight">{totalCalories - totalBurned}</span>
@@ -496,7 +511,7 @@ export default function RecordsView() {
         {/* 体重 + PFC 横並び */}
         <div className="flex gap-3">
           {/* 体重カード */}
-          <div className="bg-white rounded-2xl p-4 shadow-sm flex-shrink-0 w-[120px]">
+          <div className="bg-gray-50/80 rounded-2xl p-4 flex-shrink-0 w-[120px]">
             <div className="text-[11px] text-gray-400 font-medium mb-1.5 flex items-center gap-1">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M10 1a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 1zM5.05 3.05a.75.75 0 011.06 0l1.062 1.06A.75.75 0 116.11 5.173L5.05 4.11a.75.75 0 010-1.06zm9.9 0a.75.75 0 010 1.06l-1.06 1.062a.75.75 0 01-1.062-1.061l1.061-1.06a.75.75 0 011.06 0zM3 8a7 7 0 1114 0A7 7 0 013 8zm4-1a.75.75 0 000 1.5h2.25V10a.75.75 0 001.5 0V8.5H13a.75.75 0 000-1.5h-2.25V5.5a.75.75 0 00-1.5 0V7H7z" clipRule="evenodd" /></svg>
               体重
@@ -510,7 +525,7 @@ export default function RecordsView() {
           </div>
 
           {/* PFCカード */}
-          <div className="bg-white rounded-2xl p-4 shadow-sm flex-1">
+          <div className="bg-gray-50/80 rounded-2xl p-4 flex-1">
             <div className="text-[11px] text-gray-400 font-medium mb-2 flex items-center gap-1">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path d="M12.5 16.5a.75.75 0 01-.75-.75v-9.5a.75.75 0 011.5 0v9.5a.75.75 0 01-.75.75zM7.5 16.5a.75.75 0 01-.75-.75V10a.75.75 0 011.5 0v5.75a.75.75 0 01-.75.75zM10 16.5a.75.75 0 01-.75-.75v-7.5a.75.75 0 011.5 0v7.5a.75.75 0 01-.75.75z" /></svg>
               PFCバランス
@@ -631,9 +646,9 @@ export default function RecordsView() {
                 </div>
                 <button
                   onClick={() => setEditTarget({ type: "meal", data: { ...m } })}
-                  className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 border border-green-100 ml-2 shrink-0 mt-1"
+                  className="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 border border-green-100 ml-3 shrink-0 mt-1"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M13.488 2.513a1.75 1.75 0 00-2.475 0L6.75 6.774a2.75 2.75 0 00-.596.892l-.848 2.047a.75.75 0 00.98.98l2.047-.848a2.75 2.75 0 00.892-.596l4.261-4.262a1.75 1.75 0 000-2.474z" /><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0114 9v2.25A2.75 2.75 0 0111.25 14h-6.5A2.75 2.75 0 012 11.25v-6.5A2.75 2.75 0 014.75 2H7a.75.75 0 010 1.5H4.75z" /></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4.5 h-4.5"><path d="M13.488 2.513a1.75 1.75 0 00-2.475 0L6.75 6.774a2.75 2.75 0 00-.596.892l-.848 2.047a.75.75 0 00.98.98l2.047-.848a2.75 2.75 0 00.892-.596l4.261-4.262a1.75 1.75 0 000-2.474z" /><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0114 9v2.25A2.75 2.75 0 0111.25 14h-6.5A2.75 2.75 0 012 11.25v-6.5A2.75 2.75 0 014.75 2H7a.75.75 0 010 1.5H4.75z" /></svg>
                 </button>
               </div>
             </SwipeableCard>
@@ -660,9 +675,9 @@ export default function RecordsView() {
                 </div>
                 <button
                   onClick={() => setEditTarget({ type: "exercise", data: { ...e } })}
-                  className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 border border-green-100 ml-2 shrink-0 mt-1"
+                  className="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 border border-green-100 ml-3 shrink-0 mt-1"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M13.488 2.513a1.75 1.75 0 00-2.475 0L6.75 6.774a2.75 2.75 0 00-.596.892l-.848 2.047a.75.75 0 00.98.98l2.047-.848a2.75 2.75 0 00.892-.596l4.261-4.262a1.75 1.75 0 000-2.474z" /><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0114 9v2.25A2.75 2.75 0 0111.25 14h-6.5A2.75 2.75 0 012 11.25v-6.5A2.75 2.75 0 014.75 2H7a.75.75 0 010 1.5H4.75z" /></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4.5 h-4.5"><path d="M13.488 2.513a1.75 1.75 0 00-2.475 0L6.75 6.774a2.75 2.75 0 00-.596.892l-.848 2.047a.75.75 0 00.98.98l2.047-.848a2.75 2.75 0 00.892-.596l4.261-4.262a1.75 1.75 0 000-2.474z" /><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0114 9v2.25A2.75 2.75 0 0111.25 14h-6.5A2.75 2.75 0 012 11.25v-6.5A2.75 2.75 0 014.75 2H7a.75.75 0 010 1.5H4.75z" /></svg>
                 </button>
               </div>
             </SwipeableCard>
@@ -680,9 +695,9 @@ export default function RecordsView() {
                 </div>
                 <button
                   onClick={() => setEditTarget({ type: "weight", data: { ...w } })}
-                  className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 border border-green-100"
+                  className="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 border border-green-100"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M13.488 2.513a1.75 1.75 0 00-2.475 0L6.75 6.774a2.75 2.75 0 00-.596.892l-.848 2.047a.75.75 0 00.98.98l2.047-.848a2.75 2.75 0 00.892-.596l4.261-4.262a1.75 1.75 0 000-2.474z" /><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0114 9v2.25A2.75 2.75 0 0111.25 14h-6.5A2.75 2.75 0 012 11.25v-6.5A2.75 2.75 0 014.75 2H7a.75.75 0 010 1.5H4.75z" /></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4.5 h-4.5"><path d="M13.488 2.513a1.75 1.75 0 00-2.475 0L6.75 6.774a2.75 2.75 0 00-.596.892l-.848 2.047a.75.75 0 00.98.98l2.047-.848a2.75 2.75 0 00.892-.596l4.261-4.262a1.75 1.75 0 000-2.474z" /><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0114 9v2.25A2.75 2.75 0 0111.25 14h-6.5A2.75 2.75 0 012 11.25v-6.5A2.75 2.75 0 014.75 2H7a.75.75 0 010 1.5H4.75z" /></svg>
                 </button>
               </div>
             </SwipeableCard>

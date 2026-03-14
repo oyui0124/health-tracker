@@ -355,15 +355,15 @@ export default function ChatView() {
                               {entryLabel(entry)}
                             </div>
                             {entry.type === "meal" && (entry.protein != null || entry.calories != null) && (
-                              <div className="text-[11px] text-gray-400 mt-0.5">
+                              <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-gray-400 mt-1">
                                 {entry.calories != null && <span className="font-medium text-gray-500">{entry.calories}kcal</span>}
-                                {entry.protein != null && <span className="ml-1.5">P:{entry.protein}g</span>}
-                                {entry.fat != null && <span className="ml-1">F:{entry.fat}g</span>}
-                                {entry.carbs != null && <span className="ml-1">C:{entry.carbs}g</span>}
+                                {entry.protein != null && <span>P:{entry.protein}g</span>}
+                                {entry.fat != null && <span>F:{entry.fat}g</span>}
+                                {entry.carbs != null && <span>C:{entry.carbs}g</span>}
                               </div>
                             )}
                             {entry.type === "exercise" && entry.calories_burned != null && (
-                              <div className="text-[11px] text-gray-400 mt-0.5">
+                              <div className="text-[11px] text-gray-400 mt-1">
                                 {entry.duration_minutes && <span>{entry.duration_minutes}分</span>}
                                 <span className="ml-1.5">-{entry.calories_burned}kcal</span>
                               </div>
@@ -374,28 +374,33 @@ export default function ChatView() {
                           ) : isSaving ? (
                             <span className="text-[12px] text-gray-400 shrink-0">保存中...</span>
                           ) : (
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <button
-                                onClick={() => dismissEntry(i, j)}
-                                className="px-2 py-1 text-[11px] text-gray-400 active:text-red-500 rounded-lg active:bg-red-50"
-                              >
-                                やめる
-                              </button>
+                            <div className="flex items-center gap-2 shrink-0">
                               <button
                                 onClick={() => updateEntry(i, j, { _editing: !isEditing })}
-                                className="px-2 py-1 text-[11px] text-gray-500 active:text-blue-600 rounded-lg active:bg-blue-50"
+                                className="px-2.5 py-1.5 text-[12px] text-gray-500 active:text-blue-600 rounded-lg active:bg-blue-50"
                               >
                                 編集
                               </button>
                               <button
                                 onClick={() => saveEntry(i, j, entry)}
-                                className="px-2.5 py-1 text-[12px] font-semibold text-green-600 active:bg-green-100 rounded-lg"
+                                className="px-3 py-1.5 text-[13px] font-semibold text-white bg-green-500 active:bg-green-600 rounded-lg"
                               >
                                 追加
                               </button>
                             </div>
                           )}
                         </div>
+                        {/* スキップリンク */}
+                        {!isSaved && !isSaving && (
+                          <div className="px-3 pb-2">
+                            <button
+                              onClick={() => dismissEntry(i, j)}
+                              className="text-[11px] text-gray-400 active:text-gray-600"
+                            >
+                              スキップ
+                            </button>
+                          </div>
+                        )}
                         {/* インライン編集フォーム */}
                         {isEditing && !isSaved && (
                           <div className="px-3 pb-3 pt-1 border-t border-gray-100 space-y-2">
@@ -408,35 +413,37 @@ export default function ChatView() {
                                   className="w-full text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-green-400"
                                   placeholder="食事内容"
                                 />
-                                <div className="flex gap-2">
+                                <div>
                                   <input
                                     type="number"
                                     defaultValue={entry.calories || ""}
                                     onChange={(e) => updateEntry(i, j, { calories: Number(e.target.value) || 0 })}
-                                    className="flex-1 text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-green-400"
-                                    placeholder="kcal"
+                                    className="w-full text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-green-400 mb-2"
+                                    placeholder="カロリー (kcal)"
                                   />
-                                  <input
-                                    type="number"
-                                    defaultValue={entry.protein || ""}
-                                    onChange={(e) => updateEntry(i, j, { protein: Number(e.target.value) || 0 })}
-                                    className="flex-1 text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-green-400"
-                                    placeholder="P(g)"
-                                  />
-                                  <input
-                                    type="number"
-                                    defaultValue={entry.fat || ""}
-                                    onChange={(e) => updateEntry(i, j, { fat: Number(e.target.value) || 0 })}
-                                    className="flex-1 text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-green-400"
-                                    placeholder="F(g)"
-                                  />
-                                  <input
-                                    type="number"
-                                    defaultValue={entry.carbs || ""}
-                                    onChange={(e) => updateEntry(i, j, { carbs: Number(e.target.value) || 0 })}
-                                    className="flex-1 text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-green-400"
-                                    placeholder="C(g)"
-                                  />
+                                  <div className="grid grid-cols-3 gap-2">
+                                    <input
+                                      type="number"
+                                      defaultValue={entry.protein || ""}
+                                      onChange={(e) => updateEntry(i, j, { protein: Number(e.target.value) || 0 })}
+                                      className="text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-green-400"
+                                      placeholder="P(g)"
+                                    />
+                                    <input
+                                      type="number"
+                                      defaultValue={entry.fat || ""}
+                                      onChange={(e) => updateEntry(i, j, { fat: Number(e.target.value) || 0 })}
+                                      className="text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-green-400"
+                                      placeholder="F(g)"
+                                    />
+                                    <input
+                                      type="number"
+                                      defaultValue={entry.carbs || ""}
+                                      onChange={(e) => updateEntry(i, j, { carbs: Number(e.target.value) || 0 })}
+                                      className="text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-green-400"
+                                      placeholder="C(g)"
+                                    />
+                                  </div>
                                 </div>
                               </>
                             )}
