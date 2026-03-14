@@ -587,7 +587,7 @@ export default function RecordsView() {
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg leading-none">💡</span>
               <span className="text-[13px] font-bold text-amber-700">
-                {isToday ? "アドバイス" : "振り返り"}
+                ひとこと
               </span>
             </div>
             <div className="space-y-1.5">
@@ -760,36 +760,62 @@ export default function RecordsView() {
                 className="w-full text-[13px] text-gray-700 bg-gray-50 rounded-xl p-3 border border-gray-200/60 resize-none focus:outline-none focus:ring-1 focus:ring-green-300"
                 rows={2}
               />
-              <div className="flex justify-end gap-2">
-                {memoSaved && (
+              <div className="flex justify-between">
+                <div>
+                  {memoSaved && (
+                    <button
+                      onClick={async () => {
+                        setMemoSaving(true);
+                        try {
+                          await fetch("/api/memos", {
+                            method: "DELETE",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ date }),
+                          });
+                          setMemo("");
+                          setMemoSaved("");
+                          setMemoEditing(false);
+                        } finally {
+                          setMemoSaving(false);
+                        }
+                      }}
+                      className="text-[13px] text-red-400 px-3 py-1"
+                    >
+                      削除
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  {memoSaved && (
+                    <button
+                      onClick={() => { setMemo(memoSaved); setMemoEditing(false); }}
+                      className="text-[13px] text-gray-400 px-3 py-1"
+                    >
+                      キャンセル
+                    </button>
+                  )}
                   <button
-                    onClick={() => { setMemo(memoSaved); setMemoEditing(false); }}
-                    className="text-[13px] text-gray-400 px-3 py-1"
+                    onClick={async () => {
+                      if (!memo.trim()) return;
+                      setMemoSaving(true);
+                      try {
+                        await fetch("/api/memos", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ date, content: memo }),
+                        });
+                        setMemoSaved(memo);
+                        setMemoEditing(false);
+                      } finally {
+                        setMemoSaving(false);
+                      }
+                    }}
+                    disabled={memoSaving || !memo.trim()}
+                    className="text-[13px] bg-green-500 text-white px-3 py-1.5 rounded-lg font-medium disabled:opacity-50"
                   >
-                    キャンセル
+                    {memoSaving ? "保存中..." : "保存"}
                   </button>
-                )}
-                <button
-                  onClick={async () => {
-                    if (!memo.trim()) return;
-                    setMemoSaving(true);
-                    try {
-                      await fetch("/api/memos", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ date, content: memo }),
-                      });
-                      setMemoSaved(memo);
-                      setMemoEditing(false);
-                    } finally {
-                      setMemoSaving(false);
-                    }
-                  }}
-                  disabled={memoSaving || !memo.trim()}
-                  className="text-[13px] bg-green-500 text-white px-3 py-1.5 rounded-lg font-medium disabled:opacity-50"
-                >
-                  {memoSaving ? "保存中..." : "保存"}
-                </button>
+                </div>
               </div>
             </div>
           ) : (

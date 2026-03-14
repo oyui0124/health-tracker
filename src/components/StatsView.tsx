@@ -157,15 +157,6 @@ export default function StatsView() {
 
   // 達成カレンダーデータ
   const calendarDays = buildCalendarDays(data.dailyStats, data.goal, calendarMode);
-  const actual = calendarDays.filter((d) => !d.blank);
-  const goodCount = actual.filter((d) => d.status === "good").length;
-  const recordedCount = actual.filter((d) => d.status !== "nodata").length;
-  const rate = recordedCount > 0 ? Math.round((goodCount / recordedCount) * 100) : 0;
-  let streak = 0;
-  for (let i = actual.length - 1; i >= 0; i--) {
-    if (actual[i].status === "good") streak++;
-    else break;
-  }
 
   return (
     <PullToRefresh onRefresh={fetchData} className="px-4 py-4 space-y-4">
@@ -259,7 +250,7 @@ export default function StatsView() {
         )}
       </div>
 
-      {/* 平均実質カロリー */}
+      {/* 平均実質カロリー + ダイエットアドバイス */}
       {days > 0 && (
         <div className="bg-white rounded-2xl p-4 border border-gray-200/60">
           <div className="text-[13px] font-bold text-gray-800 mb-2 flex items-center gap-1.5">
@@ -267,20 +258,37 @@ export default function StatsView() {
             実質カロリー
             <span className="text-[11px] text-gray-400 font-medium ml-1">{range}日平均</span>
           </div>
-          <div className="flex items-baseline gap-1">
+          <div className="flex items-baseline gap-1 mb-2">
             <span className="text-[28px] font-extrabold text-gray-900">{avgNet}</span>
             <span className="text-sm text-gray-400 font-medium">kcal</span>
-            {data.goal && (
-              <span className={`ml-2 text-[13px] font-semibold ${
-                avgNet > data.goal.daily_calorie_target ? "text-red-500" : "text-green-600"
-              }`}>
-                目標{data.goal.daily_calorie_target}に対し
-                {avgNet > data.goal.daily_calorie_target
-                  ? ` +${avgNet - data.goal.daily_calorie_target}`
-                  : ` -${data.goal.daily_calorie_target - avgNet}`}
-              </span>
-            )}
           </div>
+          {data.goal && (() => {
+            const target = data.goal!.daily_calorie_target;
+            const diff = avgNet - target;
+            const isOver = diff > 0;
+            const absDiff = Math.abs(diff);
+            let advice = "";
+            if (absDiff < 50) {
+              advice = "目標通りのペースです。この調子で続けましょう";
+            } else if (isOver) {
+              if (absDiff < 150) {
+                advice = `平均${absDiff}kcalオーバー。間食を1つ減らすか、15分歩くだけで調整できます`;
+              } else {
+                advice = `平均${absDiff}kcalオーバー気味。食事量を少し見直すか、運動を増やしてみましょう`;
+              }
+            } else {
+              if (goalDiff && goalDiff > 0 && goalMonths) {
+                advice = `いいペースです！このまま続ければ約${goalMonths}ヶ月で目標体重に届きそうです`;
+              } else {
+                advice = `目標より${absDiff}kcal少なめ。${absDiff > 300 ? "少なすぎると代謝が落ちるので注意" : "順調なペースです"}`;
+              }
+            }
+            return (
+              <div className="text-[13px] text-gray-600 leading-relaxed">
+                {advice}
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -292,51 +300,34 @@ export default function StatsView() {
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-green-500"><path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd" /></svg>
                 カレンダー
               </div>
-              <div className="flex items-center gap-2 text-[11px]">
-                {calendarMode === "calorie" && streak > 0 && <span className="text-green-600 font-bold">{streak}日連続</span>}
-                {calendarMode === "calorie" && <span className="bg-green-50 text-green-600 font-bold px-1.5 py-0.5 rounded-md">{rate}%</span>}
-                {calendarMode === "exercise" && (
-                  <span className="bg-orange-50 text-orange-600 font-bold px-1.5 py-0.5 rounded-md">
-                    {actual.filter(d => d.status === "good").length}日
-                  </span>
-                )}
-              </div>
-            </div>
-            {/* セグメント切り替え */}
-            <div
-              className="flex rounded-xl p-1 mb-3 border border-white/40"
-              style={{
-                background: "rgba(255,255,255,0.45)",
-                backdropFilter: "blur(16px) saturate(180%)",
-                WebkitBackdropFilter: "blur(16px) saturate(180%)",
-              }}
-            >
-              {([["calorie", "カロリー達成"], ["exercise", "運動記録"]] as const).map(([key, label]) => (
-                <button
-                  key={key}
-                  onClick={() => setCalendarMode(key)}
-                  className={`flex-1 text-[11px] font-semibold py-1.5 rounded-[10px] transition-all duration-200 ${
-                    calendarMode === key
-                      ? "bg-white shadow-sm text-gray-800"
-                      : "text-gray-400"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <div className="overflow-hidden">
-              <div className="grid grid-cols-7 gap-[2px] text-center mb-1">
-                {["月","火","水","木","金","土","日"].map((d) => (
-                  <div key={d} className="text-[9px] text-gray-400 font-medium">{d}</div>
+              <div className="flex bg-gray-100 rounded-xl p-0.5">
+                {([["calorie", "カロリー"], ["exercise", "運動"]] as const).map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => setCalendarMode(key)}
+                    className={`px-4 py-1.5 rounded-[10px] text-[12px] font-semibold transition-all ${
+                      calendarMode === key
+                        ? "bg-white text-gray-800 shadow-sm"
+                        : "text-gray-400"
+                    }`}
+                  >
+                    {label}
+                  </button>
                 ))}
               </div>
-              <div className="grid grid-cols-7 gap-[2px]">
+            </div>
+            <div className="overflow-hidden">
+              <div className="grid grid-cols-7 gap-1 text-center mb-1.5">
+                {["月","火","水","木","金","土","日"].map((d) => (
+                  <div key={d} className="text-[10px] text-gray-400 font-medium">{d}</div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
                 {calendarDays.map((day, i) => (
-                  <div key={i} className="aspect-square flex items-center justify-center">
+                  <div key={i} className="flex items-center justify-center" style={{ aspectRatio: "1/0.85" }}>
                     {day.blank ? null : (
                       <div
-                        className={`w-full h-full rounded-[5px] flex items-center justify-center text-[9px] font-bold ${
+                        className={`w-full h-full rounded-lg flex items-center justify-center text-[11px] font-semibold ${
                           calendarMode === "exercise"
                             ? (day.status === "good"
                               ? "bg-orange-100 text-orange-600"
@@ -355,7 +346,7 @@ export default function StatsView() {
                 ))}
               </div>
             </div>
-            <div className="flex gap-3 mt-2 text-[9px] text-gray-400">
+            <div className="flex gap-3 mt-2.5 text-[10px] text-gray-400">
               {calendarMode === "calorie" ? (
                 <>
                   <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-[3px] bg-green-100 inline-block" /> 達成</span>
