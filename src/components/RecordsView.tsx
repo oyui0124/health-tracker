@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { calculateBMR, getAge } from "@/lib/bmr";
+import PullToRefresh from "./PullToRefresh";
 
 type Meal = {
   id: string;
@@ -429,7 +430,8 @@ export default function RecordsView() {
   }
 
   return (
-    <div className="h-full overflow-y-auto no-scrollbar" style={{ background: "linear-gradient(180deg, #f0fdf4 0%, #f8fafc 65%)" }}>
+    <div className="h-full relative">
+    <PullToRefresh onRefresh={fetchRecords} className="px-0" style={{ background: "linear-gradient(180deg, #f0fdf4 0%, #f8fafc 65%)" }}>
       {/* 月ヘッダー */}
       <div className="text-center pt-4 pb-1.5">
         <button
@@ -599,72 +601,6 @@ export default function RecordsView() {
           </div>
         )}
 
-        {/* メモ */}
-        <div className="bg-white rounded-2xl p-4 border border-gray-200/60">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-[11px] text-gray-400 font-medium flex items-center gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
-                <path d="M2.5 3A1.5 1.5 0 001 4.5v4A1.5 1.5 0 002.5 10h6A1.5 1.5 0 0010 8.5v-4A1.5 1.5 0 008.5 3h-6zm11 2A1.5 1.5 0 0012 6.5v7a1.5 1.5 0 001.5 1.5h4a1.5 1.5 0 001.5-1.5v-7A1.5 1.5 0 0017.5 5h-4zm-10 7A1.5 1.5 0 002 13.5v2A1.5 1.5 0 003.5 17h5A1.5 1.5 0 0010 15.5v-2A1.5 1.5 0 008.5 12h-5z" />
-              </svg>
-              メモ
-            </div>
-            {!memoEditing && memoSaved && (
-              <button
-                onClick={() => setMemoEditing(true)}
-                className="text-[11px] text-gray-400 active:text-green-600"
-              >
-                編集
-              </button>
-            )}
-          </div>
-          {memoEditing || !memoSaved ? (
-            <div className="space-y-2">
-              <textarea
-                value={memo}
-                onChange={(e) => setMemo(e.target.value)}
-                placeholder="今日のメモ..."
-                className="w-full text-[13px] text-gray-700 bg-gray-50 rounded-xl p-3 border border-gray-200/60 resize-none focus:outline-none focus:ring-1 focus:ring-green-300"
-                rows={2}
-              />
-              <div className="flex justify-end gap-2">
-                {memoSaved && (
-                  <button
-                    onClick={() => { setMemo(memoSaved); setMemoEditing(false); }}
-                    className="text-[12px] text-gray-400 px-3 py-1"
-                  >
-                    キャンセル
-                  </button>
-                )}
-                <button
-                  onClick={async () => {
-                    if (!memo.trim()) return;
-                    setMemoSaving(true);
-                    try {
-                      await fetch("/api/memos", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ date, content: memo }),
-                      });
-                      setMemoSaved(memo);
-                      setMemoEditing(false);
-                    } finally {
-                      setMemoSaving(false);
-                    }
-                  }}
-                  disabled={memoSaving || !memo.trim()}
-                  className="text-[12px] bg-green-500 text-white px-3 py-1 rounded-lg disabled:opacity-50"
-                >
-                  {memoSaving ? "保存中..." : "保存"}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="text-[13px] text-gray-700 leading-relaxed whitespace-pre-wrap">
-              {memoSaved}
-            </div>
-          )}
-        </div>
-
         {/* フィルタータブ + 追加ボタン */}
         <div className="flex items-center gap-2">
           <div
@@ -797,8 +733,75 @@ export default function RecordsView() {
           )}
         </div>
 
+        {/* メモ */}
+        <div className="bg-white rounded-2xl p-4 border border-gray-200/60">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[11px] text-gray-400 font-medium flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                <path fillRule="evenodd" d="M4.5 2A1.5 1.5 0 003 3.5v13A1.5 1.5 0 004.5 18h11a1.5 1.5 0 001.5-1.5V7.621a1.5 1.5 0 00-.44-1.06l-4.12-4.122A1.5 1.5 0 0011.378 2H4.5zm2.25 8.5a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5zm0 3a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5z" clipRule="evenodd" />
+              </svg>
+              メモ
+            </div>
+            {!memoEditing && memoSaved && (
+              <button
+                onClick={() => setMemoEditing(true)}
+                className="text-[11px] text-gray-400 active:text-green-600"
+              >
+                編集
+              </button>
+            )}
+          </div>
+          {memoEditing || !memoSaved ? (
+            <div className="space-y-2">
+              <textarea
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+                placeholder="今日のメモ..."
+                className="w-full text-[13px] text-gray-700 bg-gray-50 rounded-xl p-3 border border-gray-200/60 resize-none focus:outline-none focus:ring-1 focus:ring-green-300"
+                rows={2}
+              />
+              <div className="flex justify-end gap-2">
+                {memoSaved && (
+                  <button
+                    onClick={() => { setMemo(memoSaved); setMemoEditing(false); }}
+                    className="text-[13px] text-gray-400 px-3 py-1"
+                  >
+                    キャンセル
+                  </button>
+                )}
+                <button
+                  onClick={async () => {
+                    if (!memo.trim()) return;
+                    setMemoSaving(true);
+                    try {
+                      await fetch("/api/memos", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ date, content: memo }),
+                      });
+                      setMemoSaved(memo);
+                      setMemoEditing(false);
+                    } finally {
+                      setMemoSaving(false);
+                    }
+                  }}
+                  disabled={memoSaving || !memo.trim()}
+                  className="text-[13px] bg-green-500 text-white px-3 py-1.5 rounded-lg font-medium disabled:opacity-50"
+                >
+                  {memoSaving ? "保存中..." : "保存"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-[13px] text-gray-700 leading-relaxed whitespace-pre-wrap">
+              {memoSaved}
+            </div>
+          )}
+        </div>
+
         <div className="h-4" />
       </div>
+      </PullToRefresh>
 
       {/* FABメニュー */}
       {showAddMenu && (

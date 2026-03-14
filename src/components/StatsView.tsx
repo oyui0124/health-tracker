@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import PullToRefresh from "./PullToRefresh";
 import {
   Line,
   BarChart,
@@ -79,9 +80,9 @@ export default function StatsView() {
   const [chartMode, setChartMode] = useState<ChartMode>("net");
   const [calendarMode, setCalendarMode] = useState<"calorie" | "exercise">("calorie");
 
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     setLoading(true);
-    fetch(`/api/summary?range=${range}`)
+    return fetch(`/api/summary?range=${range}`)
       .then((r) => r.json())
       .then((d) => {
         setData(d);
@@ -89,6 +90,10 @@ export default function StatsView() {
       })
       .catch(() => setLoading(false));
   }, [range]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   if (loading) {
     return (
@@ -163,7 +168,7 @@ export default function StatsView() {
   }
 
   return (
-    <div className="h-full overflow-y-auto no-scrollbar px-4 py-4 space-y-4">
+    <PullToRefresh onRefresh={fetchData} className="px-4 py-4 space-y-4">
       {/* 期間切り替え */}
       <div
         className="flex rounded-xl p-1 border border-white/40"
@@ -283,60 +288,65 @@ export default function StatsView() {
 
         {/* 達成カレンダー */}
         {(data.goal || calendarMode === "exercise") && calendarDays.length > 0 && (
-          <div className="bg-white rounded-2xl p-3 border border-gray-200/60 flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setCalendarMode("calorie")}
-                  className={`text-[11px] font-medium px-2 py-0.5 rounded-md transition-colors ${
-                    calendarMode === "calorie"
-                      ? "bg-green-50 text-green-600"
-                      : "text-gray-400"
-                  }`}
-                >
-                  カロリー
-                </button>
-                <button
-                  onClick={() => setCalendarMode("exercise")}
-                  className={`text-[11px] font-medium px-2 py-0.5 rounded-md transition-colors ${
-                    calendarMode === "exercise"
-                      ? "bg-blue-50 text-blue-600"
-                      : "text-gray-400"
-                  }`}
-                >
-                  運動
-                </button>
+          <div className="bg-white rounded-2xl p-4 border border-gray-200/60">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-[13px] font-bold text-gray-800 flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-green-500"><path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd" /></svg>
+                カレンダー
               </div>
               <div className="flex items-center gap-2 text-[11px]">
                 {calendarMode === "calorie" && streak > 0 && <span className="text-green-600 font-bold">{streak}日連続</span>}
                 {calendarMode === "calorie" && <span className="bg-green-50 text-green-600 font-bold px-1.5 py-0.5 rounded-md">{rate}%</span>}
                 {calendarMode === "exercise" && (
-                  <span className="bg-blue-50 text-blue-600 font-bold px-1.5 py-0.5 rounded-md">
+                  <span className="bg-orange-50 text-orange-600 font-bold px-1.5 py-0.5 rounded-md">
                     {actual.filter(d => d.status === "good").length}日
                   </span>
                 )}
               </div>
             </div>
+            {/* セグメント切り替え */}
+            <div
+              className="flex rounded-xl p-1 mb-3 border border-white/40"
+              style={{
+                background: "rgba(255,255,255,0.45)",
+                backdropFilter: "blur(16px) saturate(180%)",
+                WebkitBackdropFilter: "blur(16px) saturate(180%)",
+              }}
+            >
+              {([["calorie", "カロリー達成"], ["exercise", "運動記録"]] as const).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setCalendarMode(key)}
+                  className={`flex-1 text-[11px] font-semibold py-1.5 rounded-[10px] transition-all duration-200 ${
+                    calendarMode === key
+                      ? "bg-white shadow-sm text-gray-800"
+                      : "text-gray-400"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             <div className="overflow-hidden">
-              <div className="grid grid-cols-7 gap-[3px] text-center mb-1">
+              <div className="grid grid-cols-7 gap-[2px] text-center mb-1">
                 {["月","火","水","木","金","土","日"].map((d) => (
-                  <div key={d} className="text-[9px] text-gray-400 font-semibold">{d}</div>
+                  <div key={d} className="text-[9px] text-gray-400 font-medium">{d}</div>
                 ))}
               </div>
-              <div className="grid grid-cols-7 gap-[3px]">
+              <div className="grid grid-cols-7 gap-[2px]">
                 {calendarDays.map((day, i) => (
                   <div key={i} className="aspect-square flex items-center justify-center">
                     {day.blank ? null : (
                       <div
-                        className={`w-full h-full rounded-md flex items-center justify-center text-[9px] font-bold ${
+                        className={`w-full h-full rounded-[5px] flex items-center justify-center text-[9px] font-bold ${
                           calendarMode === "exercise"
                             ? (day.status === "good"
-                              ? "bg-blue-100 text-blue-600 ring-1 ring-blue-300/50"
+                              ? "bg-orange-100 text-orange-600"
                               : "bg-gray-50 text-gray-300")
                             : (day.status === "good"
-                              ? "bg-green-100 text-green-600 ring-1 ring-green-300/50"
+                              ? "bg-green-100 text-green-600"
                               : day.status === "over"
-                                ? "bg-red-50 text-red-400 ring-1 ring-red-200/50"
+                                ? "bg-red-50 text-red-400"
                                 : "bg-gray-50 text-gray-300")
                         }`}
                       >
@@ -350,11 +360,11 @@ export default function StatsView() {
             <div className="flex gap-3 mt-2 text-[9px] text-gray-400">
               {calendarMode === "calorie" ? (
                 <>
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-green-100 ring-1 ring-green-300/50 inline-block" /> 達成</span>
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-50 ring-1 ring-red-200/50 inline-block" /> 超過</span>
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-[3px] bg-green-100 inline-block" /> 達成</span>
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-[3px] bg-red-50 inline-block" /> 超過</span>
                 </>
               ) : (
-                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-blue-100 ring-1 ring-blue-300/50 inline-block" /> 運動した</span>
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-[3px] bg-orange-100 inline-block" /> 運動した</span>
               )}
             </div>
           </div>
@@ -513,7 +523,7 @@ export default function StatsView() {
       </div>
 
       <div className="h-4" />
-    </div>
+    </PullToRefresh>
   );
 }
 
@@ -525,14 +535,13 @@ function buildCalendarDays(
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // 30日前から表示
-  const startDate = new Date(today);
-  startDate.setDate(startDate.getDate() - 29);
+  // 当月1日から表示
+  const startDate = new Date(today.getFullYear(), today.getMonth(), 1);
 
-  // 月曜始まりに揃える
-  const startDay = new Date(startDate);
-  const dow = startDay.getDay();
+  // 月曜始まりに揃える（1日より前は空白）
+  const dow = startDate.getDay();
   const mondayOffset = dow === 0 ? -6 : 1 - dow;
+  const startDay = new Date(startDate);
   startDay.setDate(startDay.getDate() + mondayOffset);
 
   const result: { dayNum: number; status: "good" | "over" | "nodata" | "future"; label: string; blank?: boolean }[] = [];
