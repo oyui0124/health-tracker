@@ -473,7 +473,7 @@ export default function RecordsView() {
 
       <div className="px-4 space-y-3.5 pb-28">
         {/* カロリーサマリーカード */}
-        <div className="bg-gray-50/80 rounded-2xl p-5">
+        <div className="bg-white rounded-2xl p-5">
           <div className="flex items-baseline justify-between mb-1.5">
             <div>
               <span className="text-[34px] font-extrabold text-gray-900 tracking-tight">{totalCalories - totalBurned}</span>
@@ -511,7 +511,7 @@ export default function RecordsView() {
         {/* 体重 + PFC 横並び */}
         <div className="flex gap-3">
           {/* 体重カード */}
-          <div className="bg-gray-50/80 rounded-2xl p-4 flex-shrink-0 w-[120px]">
+          <div className="bg-white rounded-2xl p-4 flex-shrink-0 w-[120px]">
             <div className="text-[11px] text-gray-400 font-medium mb-1.5 flex items-center gap-1">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M10 1a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 1zM5.05 3.05a.75.75 0 011.06 0l1.062 1.06A.75.75 0 116.11 5.173L5.05 4.11a.75.75 0 010-1.06zm9.9 0a.75.75 0 010 1.06l-1.06 1.062a.75.75 0 01-1.062-1.061l1.061-1.06a.75.75 0 011.06 0zM3 8a7 7 0 1114 0A7 7 0 013 8zm4-1a.75.75 0 000 1.5h2.25V10a.75.75 0 001.5 0V8.5H13a.75.75 0 000-1.5h-2.25V5.5a.75.75 0 00-1.5 0V7H7z" clipRule="evenodd" /></svg>
               体重
@@ -525,7 +525,7 @@ export default function RecordsView() {
           </div>
 
           {/* PFCカード */}
-          <div className="bg-gray-50/80 rounded-2xl p-4 flex-1">
+          <div className="bg-white rounded-2xl p-4 flex-1">
             <div className="text-[11px] text-gray-400 font-medium mb-2 flex items-center gap-1">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path d="M12.5 16.5a.75.75 0 01-.75-.75v-9.5a.75.75 0 011.5 0v9.5a.75.75 0 01-.75.75zM7.5 16.5a.75.75 0 01-.75-.75V10a.75.75 0 011.5 0v5.75a.75.75 0 01-.75.75zM10 16.5a.75.75 0 01-.75-.75v-7.5a.75.75 0 011.5 0v7.5a.75.75 0 01-.75.75z" /></svg>
               PFCバランス
