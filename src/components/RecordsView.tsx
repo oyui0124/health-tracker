@@ -319,12 +319,12 @@ export default function RecordsView() {
   }
 
   return (
-    <div className="h-full overflow-y-auto no-scrollbar bg-green-50/40">
+    <div className="h-full overflow-y-auto no-scrollbar" style={{ background: "linear-gradient(180deg, #f0fdf4 0%, #f8fafc 40%)" }}>
       {/* 月ヘッダー */}
-      <div className="text-center pt-3 pb-1">
+      <div className="text-center pt-4 pb-1.5">
         <button
           onClick={() => setShowCalendar(!showCalendar)}
-          className="text-base font-bold text-gray-800 active:opacity-60"
+          className="text-lg font-bold text-gray-900 tracking-tight active:opacity-60"
         >
           {selectedMonth}月
         </button>
@@ -332,7 +332,7 @@ export default function RecordsView() {
 
       {/* カレンダー日付選択 */}
       {showCalendar && (
-        <div className="px-5 pb-2">
+        <div className="px-5 pb-3">
           <input
             type="date"
             value={date}
@@ -341,11 +341,11 @@ export default function RecordsView() {
               setDate(e.target.value);
               setShowCalendar(false);
             }}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-base focus:outline-none focus:border-green-500 bg-white"
+            className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-base focus:outline-none focus:border-green-500 bg-white shadow-sm"
           />
           <button
             onClick={() => { setDate(getLocalDate()); setShowCalendar(false); }}
-            className="w-full mt-1.5 py-2 text-sm text-green-600 font-medium active:bg-green-50 rounded-lg"
+            className="w-full mt-2 py-2.5 text-sm text-green-600 font-semibold active:bg-green-50 rounded-xl"
           >
             今日に戻る
           </button>
@@ -353,23 +353,23 @@ export default function RecordsView() {
       )}
 
       {/* 週スクロール */}
-      <div className="flex justify-between px-4 pb-3">
+      <div className="flex justify-between px-5 pb-4">
         {weekDays.map((d) => (
           <button
             key={d.date}
             onClick={() => setDate(d.date)}
-            className="flex flex-col items-center gap-0.5"
+            className="flex flex-col items-center gap-1"
           >
-            <span className={`text-[11px] font-medium ${d.isSelected ? "text-white" : "text-gray-400"}`}>
+            <span className={`text-[11px] font-semibold tracking-wide uppercase ${d.isSelected ? "text-green-600" : "text-gray-500"}`}>
               {d.dayLabel}
             </span>
             <span
-              className={`w-10 h-10 rounded-xl flex items-center justify-center text-base font-bold transition-colors ${
+              className={`w-11 h-11 rounded-2xl flex items-center justify-center text-[17px] font-bold transition-all ${
                 d.isSelected
-                  ? "bg-green-500 text-white shadow-md shadow-green-200"
+                  ? "bg-green-500 text-white shadow-lg shadow-green-500/30"
                   : d.isToday
-                    ? "text-green-600 bg-green-100"
-                    : "text-gray-600"
+                    ? "text-green-600 bg-green-50 ring-2 ring-green-200"
+                    : "text-gray-700 hover:bg-gray-100"
               }`}
             >
               {d.dayNum}
@@ -378,33 +378,33 @@ export default function RecordsView() {
         ))}
       </div>
 
-      <div className="px-4 space-y-3 pb-24">
+      <div className="px-4 space-y-3.5 pb-28">
         {/* カロリーサマリーカード */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <div className="flex items-baseline justify-between mb-1">
+        <div className="bg-white rounded-3xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+          <div className="flex items-baseline justify-between mb-1.5">
             <div>
-              <span className="text-3xl font-extrabold text-gray-900">{totalCalories - totalBurned}</span>
-              <span className="text-sm text-gray-400 ml-1">kcal</span>
+              <span className="text-[34px] font-extrabold text-gray-900 tracking-tight">{totalCalories - totalBurned}</span>
+              <span className="text-base text-gray-400 ml-1 font-medium">kcal</span>
             </div>
             {goal && (
-              <span className="text-sm text-gray-400">/ {goal.daily_calorie_target}kcal</span>
+              <span className="text-sm text-gray-500 font-medium">/ {goal.daily_calorie_target}kcal</span>
             )}
           </div>
-          <div className="flex gap-4 text-xs text-gray-400 mb-2.5">
-            <span>摂取：<b className="text-gray-600">{totalCalories}</b>kcal</span>
-            <span>運動：<b className="text-gray-600">{totalBurned}</b>kcal</span>
+          <div className="flex gap-5 text-[13px] text-gray-500 mb-3">
+            <span>摂取：<span className="font-semibold text-gray-700">{totalCalories}</span>kcal</span>
+            <span>運動：<span className="font-semibold text-gray-700">{totalBurned}</span>kcal</span>
           </div>
           {goal && (
-            <div className="h-3 bg-gray-100 rounded-full overflow-hidden relative">
+            <div className="h-3.5 bg-gray-100 rounded-full overflow-hidden relative">
               <div
                 className={`h-full rounded-full transition-all ${
-                  totalCalories - totalBurned > goal.daily_calorie_target ? "bg-red-400" : "bg-green-400"
+                  totalCalories - totalBurned > goal.daily_calorie_target ? "bg-red-400" : "bg-green-500"
                 }`}
                 style={{ width: `${Math.min(100, ((totalCalories - totalBurned) / goal.daily_calorie_target) * 100)}%` }}
               />
               {totalBurned > 0 && (
                 <div
-                  className="absolute top-0 h-full bg-gray-300 rounded-r-full"
+                  className="absolute top-0 h-full bg-gray-300/60 rounded-r-full"
                   style={{
                     left: `${Math.min(100, ((totalCalories - totalBurned) / goal.daily_calorie_target) * 100)}%`,
                     width: `${Math.min(100 - Math.min(100, ((totalCalories - totalBurned) / goal.daily_calorie_target) * 100), (totalBurned / goal.daily_calorie_target) * 100)}%`,
@@ -418,46 +418,46 @@ export default function RecordsView() {
         {/* 体重 + PFC 横並び */}
         <div className="flex gap-3">
           {/* 体重カード */}
-          <div className="bg-white rounded-2xl p-3 shadow-sm flex-shrink-0" style={{ minWidth: "110px" }}>
-            <div className="text-xs font-semibold text-gray-500 mb-1">体重</div>
+          <div className="bg-white rounded-3xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] flex-shrink-0 w-[120px]">
+            <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">体重</div>
             <div className="flex items-baseline">
-              <span className="text-3xl font-extrabold text-gray-900">
+              <span className="text-[32px] font-extrabold text-gray-900 tracking-tight leading-none">
                 {weights.length > 0 ? weights[0].weight : latestWeight || "—"}
               </span>
-              <span className="text-sm text-gray-400 ml-0.5">kg</span>
+              <span className="text-sm text-gray-400 ml-0.5 font-medium">kg</span>
             </div>
           </div>
 
           {/* PFCカード */}
-          <div className="bg-white rounded-2xl p-3 shadow-sm flex-1">
-            <div className="text-xs font-semibold text-gray-500 mb-1.5">PFCバランス</div>
+          <div className="bg-white rounded-3xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] flex-1">
+            <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">PFCバランス</div>
             {pfcRatio && (
-              <div className="mb-2">
-                <div className="flex h-2.5 rounded-full overflow-hidden">
-                  <div className="bg-green-600" style={{ width: `${pfcRatio.p}%` }} />
-                  <div className="bg-green-400" style={{ width: `${pfcRatio.c}%` }} />
-                  <div className="bg-green-200" style={{ width: `${pfcRatio.f}%` }} />
+              <div className="mb-2.5">
+                <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
+                  <div className="bg-emerald-500 rounded-full" style={{ width: `${pfcRatio.p}%` }} />
+                  <div className="bg-green-400 rounded-full" style={{ width: `${pfcRatio.c}%` }} />
+                  <div className="bg-teal-200 rounded-full" style={{ width: `${pfcRatio.f}%` }} />
                 </div>
               </div>
             )}
             <div className="grid grid-cols-3 gap-1 text-center">
               <div>
-                <div className="text-sm font-bold text-gray-800">
-                  {Math.round(totalProtein)}<span className="text-gray-300 font-normal text-xs">/{goal ? Math.round(goal.daily_calorie_target * 0.175 / 4) : "—"}</span>
+                <div className="text-[15px] font-bold text-gray-900">
+                  {Math.round(totalProtein)}<span className="text-gray-400 font-medium text-[11px]">/{goal ? Math.round(goal.daily_calorie_target * 0.175 / 4) : "—"}</span>
                 </div>
-                <div className="text-[10px] text-gray-400">P</div>
+                <div className="text-[10px] font-semibold text-gray-400">P</div>
               </div>
               <div>
-                <div className="text-sm font-bold text-gray-800">
-                  {Math.round(totalFat)}<span className="text-gray-300 font-normal text-xs">/{goal ? Math.round(goal.daily_calorie_target * 0.25 / 9) : "—"}</span>
+                <div className="text-[15px] font-bold text-gray-900">
+                  {Math.round(totalFat)}<span className="text-gray-400 font-medium text-[11px]">/{goal ? Math.round(goal.daily_calorie_target * 0.25 / 9) : "—"}</span>
                 </div>
-                <div className="text-[10px] text-gray-400">F</div>
+                <div className="text-[10px] font-semibold text-gray-400">F</div>
               </div>
               <div>
-                <div className="text-sm font-bold text-gray-800">
-                  {Math.round(totalCarbs)}<span className="text-gray-300 font-normal text-xs">/{goal ? Math.round(goal.daily_calorie_target * 0.575 / 4) : "—"}</span>
+                <div className="text-[15px] font-bold text-gray-900">
+                  {Math.round(totalCarbs)}<span className="text-gray-400 font-medium text-[11px]">/{goal ? Math.round(goal.daily_calorie_target * 0.575 / 4) : "—"}</span>
                 </div>
-                <div className="text-[10px] text-gray-400">C</div>
+                <div className="text-[10px] font-semibold text-gray-400">C</div>
               </div>
             </div>
           </div>
@@ -465,17 +465,17 @@ export default function RecordsView() {
 
         {/* アドバイス */}
         {adviceTips.length > 0 && (
-          <div className="bg-orange-50 rounded-2xl p-4 border border-orange-100">
-            <div className="flex items-center gap-1.5 mb-2">
-              <span className="text-base">💡</span>
-              <span className="text-xs font-bold text-orange-600">
+          <div className="bg-amber-50 rounded-3xl p-4 border border-amber-200/60 shadow-[0_2px_8px_rgba(245,158,11,0.08)]">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-lg leading-none">💡</span>
+              <span className="text-[13px] font-bold text-amber-700">
                 {isToday ? "アドバイス" : "振り返り"}
               </span>
             </div>
             <div className="space-y-1.5">
               {adviceTips.map((tip, i) => (
-                <div key={i} className="text-[13px] text-gray-700 flex gap-2">
-                  <span className="shrink-0 text-orange-300 mt-0.5">•</span>
+                <div key={i} className="text-[13px] text-gray-700 leading-relaxed flex gap-2">
+                  <span className="shrink-0 text-amber-400 mt-0.5">•</span>
                   <span>{tip}</span>
                 </div>
               ))}
@@ -484,14 +484,14 @@ export default function RecordsView() {
         )}
 
         {/* フィルタータブ */}
-        <div className="flex bg-gray-100 rounded-xl p-1">
+        <div className="flex bg-gray-100/80 rounded-2xl p-1">
           {([["all", "すべて"], ["meal", "食事"], ["exercise", "運動"]] as const).map(([key, label]) => (
             <button
               key={key}
               onClick={() => setFilter(key)}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
                 filter === key
-                  ? "bg-green-100 text-green-700 shadow-sm"
+                  ? "bg-white text-green-700 shadow-sm"
                   : "text-gray-500"
               }`}
             >
@@ -500,40 +500,50 @@ export default function RecordsView() {
           ))}
         </div>
 
+        {/* + 追加 ボタン（右寄せ） */}
+        <div className="flex justify-end">
+          <button
+            onClick={() => setShowAddMenu(!showAddMenu)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-green-500 text-green-600 text-[13px] font-bold active:bg-green-50 transition-colors"
+          >
+            <span className="text-lg leading-none">+</span> 追加
+          </button>
+        </div>
+
         {/* 記録一覧 */}
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {/* 食事 */}
           {filteredMeals.map((m) => (
-            <div key={m.id} className="bg-white rounded-2xl p-3.5 shadow-sm">
+            <div key={m.id} className="bg-white rounded-3xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm">🍽</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-sm">🍽</span>
+                    <span className="text-[11px] font-bold text-green-700 uppercase tracking-wide">
                       {MEAL_TYPE_LABEL[m.meal_type] || m.meal_type}
                     </span>
                   </div>
-                  <div className="text-[15px] font-medium text-gray-800 mb-1">
+                  <div className="text-[15px] font-semibold text-gray-900 mb-1.5 leading-snug">
                     {m.description}
                   </div>
-                  <div className="flex gap-3 text-xs text-gray-400">
-                    <span className="font-semibold text-green-600">{m.calories} kcal</span>
-                    <span>P:{m.protein || 0}g</span>
-                    <span>F:{m.fat || 0}g</span>
-                    <span>C:{m.carbs || 0}g</span>
+                  <div className="flex gap-3 text-[12px]">
+                    <span className="font-bold text-green-600">{m.calories} kcal</span>
+                    <span className="text-gray-500">P:{m.protein || 0}g</span>
+                    <span className="text-gray-500">F:{m.fat || 0}g</span>
+                    <span className="text-gray-500">C:{m.carbs || 0}g</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 ml-2 shrink-0">
+                <div className="flex items-center gap-1 ml-2 shrink-0 mt-1">
                   <button
                     onClick={() => setEditTarget({ type: "meal", data: { ...m } })}
-                    className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 active:bg-gray-200 text-sm"
+                    className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-600 active:bg-gray-200 text-[13px] border border-gray-100"
                   >
                     ✎
                   </button>
                   <button
                     onClick={() => handleDelete("meal", m.id)}
                     disabled={deleting === m.id}
-                    className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 active:bg-gray-200 text-sm"
+                    className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 active:bg-gray-200 text-[13px] border border-gray-100"
                   >
                     {deleting === m.id ? "…" : "✕"}
                   </button>
@@ -544,34 +554,32 @@ export default function RecordsView() {
 
           {/* 運動 */}
           {filteredExercises.map((e) => (
-            <div key={e.id} className="bg-white rounded-2xl p-3.5 shadow-sm">
+            <div key={e.id} className="bg-white rounded-3xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm">🏃</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 font-medium">
-                      運動
-                    </span>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-sm">🏃</span>
+                    <span className="text-[11px] font-bold text-orange-600 uppercase tracking-wide">運動</span>
                   </div>
-                  <div className="text-[15px] font-medium text-gray-800 mb-1">
+                  <div className="text-[15px] font-semibold text-gray-900 mb-1.5 leading-snug">
                     {e.description}
                   </div>
-                  <div className="flex gap-3 text-xs text-gray-400">
-                    <span className="font-semibold text-orange-500">-{e.calories_burned} kcal</span>
-                    <span>{e.duration_minutes}分</span>
+                  <div className="flex gap-3 text-[12px]">
+                    <span className="font-bold text-orange-600">-{e.calories_burned} kcal</span>
+                    <span className="text-gray-500">{e.duration_minutes}分</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 ml-2 shrink-0">
+                <div className="flex items-center gap-1 ml-2 shrink-0 mt-1">
                   <button
                     onClick={() => setEditTarget({ type: "exercise", data: { ...e } })}
-                    className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 active:bg-gray-200 text-sm"
+                    className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-600 active:bg-gray-200 text-[13px] border border-gray-100"
                   >
                     ✎
                   </button>
                   <button
                     onClick={() => handleDelete("exercise", e.id)}
                     disabled={deleting === e.id}
-                    className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 active:bg-gray-200 text-sm"
+                    className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 active:bg-gray-200 text-[13px] border border-gray-100"
                   >
                     {deleting === e.id ? "…" : "✕"}
                   </button>
@@ -582,23 +590,23 @@ export default function RecordsView() {
 
           {/* 体重 */}
           {filter === "all" && weights.map((w) => (
-            <div key={w.id} className="bg-white rounded-2xl p-3.5 shadow-sm">
+            <div key={w.id} className="bg-white rounded-3xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">⚖️</span>
-                  <span className="text-[15px] font-medium text-gray-800">{w.weight} kg</span>
+                <div className="flex items-center gap-2.5">
+                  <span className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-sm">⚖️</span>
+                  <span className="text-[15px] font-semibold text-gray-900">{w.weight} kg</span>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                   <button
                     onClick={() => setEditTarget({ type: "weight", data: { ...w } })}
-                    className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 active:bg-gray-200 text-sm"
+                    className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-600 active:bg-gray-200 text-[13px] border border-gray-100"
                   >
                     ✎
                   </button>
                   <button
                     onClick={() => handleDelete("weight", w.id)}
                     disabled={deleting === w.id}
-                    className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 active:bg-gray-200 text-sm"
+                    className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 active:bg-gray-200 text-[13px] border border-gray-100"
                   >
                     {deleting === w.id ? "…" : "✕"}
                   </button>
@@ -609,49 +617,41 @@ export default function RecordsView() {
 
           {/* 空の場合 */}
           {filteredMeals.length === 0 && filteredExercises.length === 0 && (filter !== "all" || weights.length === 0) && (
-            <p className="text-center text-gray-300 py-8 text-sm">記録がありません</p>
+            <div className="text-center py-12">
+              <div className="text-3xl mb-2">📝</div>
+              <p className="text-gray-400 text-sm">記録がありません</p>
+            </div>
           )}
         </div>
 
         <div className="h-4" />
       </div>
 
-      {/* FAB追加ボタン */}
-      <div className="fixed bottom-20 right-5 z-40">
-        {showAddMenu && (
-          <div className="absolute bottom-14 right-0 bg-white rounded-2xl shadow-lg border border-gray-100 py-2 w-36 animate-in fade-in slide-in-from-bottom-2">
+      {/* FABメニュー */}
+      {showAddMenu && (
+        <>
+          <div className="fixed inset-0 z-30 bg-black/20 backdrop-blur-[2px]" onClick={() => setShowAddMenu(false)} />
+          <div className="fixed bottom-24 right-5 z-40 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 w-40">
             <button
               onClick={() => { setAddType("meal"); setShowAddMenu(false); }}
-              className="w-full px-4 py-2.5 text-left text-sm text-gray-700 active:bg-gray-50 flex items-center gap-2"
+              className="w-full px-4 py-3 text-left text-[14px] font-medium text-gray-800 active:bg-gray-50 flex items-center gap-3"
             >
-              <span>🍽</span> 食事
+              <span className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-sm">🍽</span> 食事
             </button>
             <button
               onClick={() => { setAddType("exercise"); setShowAddMenu(false); }}
-              className="w-full px-4 py-2.5 text-left text-sm text-gray-700 active:bg-gray-50 flex items-center gap-2"
+              className="w-full px-4 py-3 text-left text-[14px] font-medium text-gray-800 active:bg-gray-50 flex items-center gap-3"
             >
-              <span>🏃</span> 運動
+              <span className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-sm">🏃</span> 運動
             </button>
             <button
               onClick={() => { setAddType("weight"); setShowAddMenu(false); }}
-              className="w-full px-4 py-2.5 text-left text-sm text-gray-700 active:bg-gray-50 flex items-center gap-2"
+              className="w-full px-4 py-3 text-left text-[14px] font-medium text-gray-800 active:bg-gray-50 flex items-center gap-3"
             >
-              <span>⚖️</span> 体重
+              <span className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-sm">⚖️</span> 体重
             </button>
           </div>
-        )}
-        <button
-          onClick={() => setShowAddMenu(!showAddMenu)}
-          className="w-14 h-14 rounded-full bg-green-500 text-white shadow-lg shadow-green-200 flex items-center justify-center text-2xl font-light active:bg-green-600 transition-transform"
-          style={{ transform: showAddMenu ? "rotate(45deg)" : "none" }}
-        >
-          +
-        </button>
-      </div>
-
-      {/* クリックアウトでメニュー閉じる */}
-      {showAddMenu && (
-        <div className="fixed inset-0 z-30" onClick={() => setShowAddMenu(false)} />
+        </>
       )}
 
       {editTarget && (
