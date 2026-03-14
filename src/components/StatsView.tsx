@@ -259,32 +259,30 @@ export default function StatsView() {
         )}
       </div>
 
-      {/* 平均 + 達成カレンダー */}
-      <div className="flex gap-3">
-        {/* 平均実質カロリー */}
-        {days > 0 && (
-          <div className="bg-white rounded-2xl p-4 border border-gray-200/60 w-[130px] shrink-0">
-            <div className="text-[11px] text-gray-400 font-medium mb-1 flex items-center gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path d="M12.5 16.5a.75.75 0 01-.75-.75v-9.5a.75.75 0 011.5 0v9.5a.75.75 0 01-.75.75zM7.5 16.5a.75.75 0 01-.75-.75V10a.75.75 0 011.5 0v5.75a.75.75 0 01-.75.75zM10 16.5a.75.75 0 01-.75-.75v-7.5a.75.75 0 011.5 0v7.5a.75.75 0 01-.75.75z" /></svg>
-              実質カロリー
-            </div>
-            <div className="text-[11px] text-gray-400 font-medium mb-2">{range}日平均</div>
-            <div className="flex items-baseline gap-0.5">
-              <span className="text-[24px] font-extrabold text-gray-900">{avgNet}</span>
-              <span className="text-[11px] text-gray-400">kcal</span>
-            </div>
+      {/* 平均実質カロリー */}
+      {days > 0 && (
+        <div className="bg-white rounded-2xl p-4 border border-gray-200/60">
+          <div className="text-[13px] font-bold text-gray-800 mb-2 flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-green-500"><path d="M12.5 16.5a.75.75 0 01-.75-.75v-9.5a.75.75 0 011.5 0v9.5a.75.75 0 01-.75.75zM7.5 16.5a.75.75 0 01-.75-.75V10a.75.75 0 011.5 0v5.75a.75.75 0 01-.75.75zM10 16.5a.75.75 0 01-.75-.75v-7.5a.75.75 0 011.5 0v7.5a.75.75 0 01-.75.75z" /></svg>
+            実質カロリー
+            <span className="text-[11px] text-gray-400 font-medium ml-1">{range}日平均</span>
+          </div>
+          <div className="flex items-baseline gap-1">
+            <span className="text-[28px] font-extrabold text-gray-900">{avgNet}</span>
+            <span className="text-sm text-gray-400 font-medium">kcal</span>
             {data.goal && (
-              <div className={`mt-1.5 text-[12px] font-semibold ${
+              <span className={`ml-2 text-[13px] font-semibold ${
                 avgNet > data.goal.daily_calorie_target ? "text-red-500" : "text-green-600"
               }`}>
                 目標{data.goal.daily_calorie_target}に対し
                 {avgNet > data.goal.daily_calorie_target
                   ? ` +${avgNet - data.goal.daily_calorie_target}`
                   : ` -${data.goal.daily_calorie_target - avgNet}`}
-              </div>
+              </span>
             )}
           </div>
-        )}
+        </div>
+      )}
 
         {/* 達成カレンダー */}
         {(data.goal || calendarMode === "exercise") && calendarDays.length > 0 && (
@@ -369,7 +367,6 @@ export default function StatsView() {
             </div>
           </div>
         )}
-      </div>
 
       {/* カロリー推移グラフ */}
       <div className="bg-white rounded-2xl p-4 border border-gray-200/60">
