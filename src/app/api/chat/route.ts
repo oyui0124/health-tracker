@@ -278,7 +278,7 @@ async function processEntries(parsed: {
     try {
       if (action === "add") {
         if (entry.type === "meal") {
-          await db.from("meal_logs").insert({
+          const { error } = await db.from("meal_logs").insert({
             date: entryDate,
             meal_type: entry.meal_type,
             description: entry.description,
@@ -287,20 +287,23 @@ async function processEntries(parsed: {
             carbs: entry.carbs,
             fat: entry.fat,
           });
+          if (error) console.error("meal insert error:", error);
         } else if (entry.type === "weight") {
-          await db
+          const { error } = await db
             .from("weight_logs")
             .upsert(
               { date: entryDate, weight: entry.weight },
               { onConflict: "date" }
             );
+          if (error) console.error("weight upsert error:", error);
         } else if (entry.type === "exercise") {
-          await db.from("exercise_logs").insert({
+          const { error } = await db.from("exercise_logs").insert({
             date: entryDate,
             description: entry.description,
             duration_minutes: entry.duration_minutes,
             calories_burned: entry.calories_burned,
           });
+          if (error) console.error("exercise insert error:", error);
         }
       } else if (action === "delete" && entry.id) {
         const table = TABLE_MAP[entry.type as string];
@@ -399,6 +402,7 @@ export async function POST(req: NextRequest) {
 
     // エントリを解析して保存
     const parsed = parseEntries(assistantMessage);
+    console.log("LLM response has JSON block:", !!parsed, parsed ? JSON.stringify(parsed).slice(0, 200) : "none");
     if (parsed?.entries) {
       await processEntries(parsed);
     }
