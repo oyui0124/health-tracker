@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { calculateBMR, getAge } from "@/lib/bmr";
 
 type Meal = {
@@ -268,6 +268,20 @@ export default function RecordsView() {
     });
     setEditTarget(null);
     fetchRecords();
+  };
+
+  // 長押しで全削除確認を表示
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleTouchStart = () => {
+    longPressTimer.current = setTimeout(() => {
+      setShowDeleteAllConfirm(true);
+    }, 600);
+  };
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
   };
 
   const handleDeleteAll = async () => {
@@ -547,7 +561,7 @@ export default function RecordsView() {
         <div className="space-y-3">
           {/* 食事 */}
           {filteredMeals.map((m) => (
-            <div key={m.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div key={m.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} onTouchMove={handleTouchEnd}>
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1.5">
@@ -589,7 +603,7 @@ export default function RecordsView() {
 
           {/* 運動 */}
           {filteredExercises.map((e) => (
-            <div key={e.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div key={e.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} onTouchMove={handleTouchEnd}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1.5">
@@ -627,7 +641,7 @@ export default function RecordsView() {
 
           {/* 体重 */}
           {filter === "all" && weights.map((w) => (
-            <div key={w.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div key={w.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} onTouchMove={handleTouchEnd}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <span className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
@@ -665,37 +679,6 @@ export default function RecordsView() {
           )}
         </div>
 
-        {/* 全部消すボタン */}
-        {(meals.length > 0 || exercises.length > 0 || weights.length > 0) && (
-          <div className="pt-4 pb-2 flex justify-center">
-            {showDeleteAllConfirm ? (
-              <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
-                <span className="text-[13px] text-red-600 font-medium">この日の記録を全て削除しますか？</span>
-                <button
-                  onClick={handleDeleteAll}
-                  disabled={deletingAll}
-                  className="px-3 py-1.5 text-[12px] font-semibold text-white bg-red-500 rounded-lg active:bg-red-600 disabled:opacity-50"
-                >
-                  {deletingAll ? "削除中..." : "削除する"}
-                </button>
-                <button
-                  onClick={() => setShowDeleteAllConfirm(false)}
-                  className="px-3 py-1.5 text-[12px] text-gray-500 active:text-gray-700"
-                >
-                  やめる
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setShowDeleteAllConfirm(true)}
-                className="text-[12px] text-gray-400 active:text-red-500 transition-colors py-2 px-4"
-              >
-                この日の記録を全部消す
-              </button>
-            )}
-          </div>
-        )}
-
         <div className="h-4" />
       </div>
 
@@ -724,6 +707,39 @@ export default function RecordsView() {
             </button>
           </div>
         </>
+      )}
+
+      {/* 長押し全削除確認 */}
+      {showDeleteAllConfirm && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30" onClick={() => setShowDeleteAllConfirm(false)}>
+          <div className="w-full bg-white rounded-t-3xl p-5 pb-[max(env(safe-area-inset-bottom,20px),20px)] animate-slideUpDelete" onClick={(e) => e.stopPropagation()}>
+            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
+            <div className="text-center mb-4">
+              <div className="text-lg mb-1">🗑</div>
+              <h3 className="text-base font-bold text-gray-900">この日の記録を全て削除</h3>
+              <p className="text-[13px] text-gray-500 mt-1">食事・運動・体重の全記録が削除されます</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteAllConfirm(false)}
+                className="flex-1 py-3.5 rounded-2xl bg-gray-100 text-gray-600 font-semibold text-[15px] active:bg-gray-200"
+              >
+                やめる
+              </button>
+              <button
+                onClick={handleDeleteAll}
+                disabled={deletingAll}
+                className="flex-1 py-3.5 rounded-2xl bg-red-500 text-white font-semibold text-[15px] active:bg-red-600 disabled:opacity-50"
+              >
+                {deletingAll ? "削除中..." : "全て削除"}
+              </button>
+            </div>
+          </div>
+          <style jsx>{`
+            @keyframes slideUpDelete { from { transform: translateY(100%); } to { transform: translateY(0); } }
+            .animate-slideUpDelete { animation: slideUpDelete 0.3s ease-out; }
+          `}</style>
+        </div>
       )}
 
       {editTarget && (
