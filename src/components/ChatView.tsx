@@ -197,6 +197,27 @@ export default function ChatView() {
     setIsRecording(false);
   };
 
+  // URLをリンクに変換
+  const renderContent = (text: string, isUser: boolean) => {
+    const urlRegex = /(https?:\/\/[^\s）\)]+)/g;
+    const parts = text.split(urlRegex);
+    return parts.map((part, i) =>
+      urlRegex.test(part) ? (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`underline break-all ${isUser ? "text-white/90" : "text-green-600"}`}
+        >
+          {part.length > 40 ? part.slice(0, 40) + "..." : part}
+        </a>
+      ) : (
+        <span key={i}>{part}</span>
+      )
+    );
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-3 space-y-3">
@@ -212,7 +233,7 @@ export default function ChatView() {
                   : "bg-gray-100 text-gray-800 rounded-bl-md"
               }`}
             >
-              {msg.content}
+              {renderContent(msg.content, msg.role === "user")}
             </div>
           </div>
         ))}
