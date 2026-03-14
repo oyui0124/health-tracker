@@ -319,7 +319,7 @@ export default function RecordsView() {
   }
 
   return (
-    <div className="h-full overflow-y-auto no-scrollbar" style={{ background: "linear-gradient(180deg, #f0fdf4 0%, #f8fafc 40%)" }}>
+    <div className="h-full overflow-y-auto no-scrollbar" style={{ background: "linear-gradient(180deg, #f0fdf4 0%, #f8fafc 65%)" }}>
       {/* 月ヘッダー */}
       <div className="text-center pt-4 pb-1.5">
         <button
@@ -440,9 +440,9 @@ export default function RecordsView() {
             {pfcRatio && (
               <div className="mb-2.5">
                 <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
-                  <div className="bg-emerald-500 rounded-full" style={{ width: `${pfcRatio.p}%` }} />
-                  <div className="bg-green-400 rounded-full" style={{ width: `${pfcRatio.c}%` }} />
-                  <div className="bg-teal-200 rounded-full" style={{ width: `${pfcRatio.f}%` }} />
+                  <div className="bg-green-500 rounded-full" style={{ width: `${pfcRatio.p}%` }} />
+                  <div className="bg-amber-400 rounded-full" style={{ width: `${pfcRatio.c}%` }} />
+                  <div className="bg-sky-400 rounded-full" style={{ width: `${pfcRatio.f}%` }} />
                 </div>
               </div>
             )}
