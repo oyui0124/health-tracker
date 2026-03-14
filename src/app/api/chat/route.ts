@@ -260,72 +260,85 @@ export async function POST(req: NextRequest) {
       .from("chat_messages")
       .select("role, content")
       .order("created_at", { ascending: false })
-      .limit(10);
+      .limit(6);
 
     const contextInfo = `${todaySummary}\n${recentHistory}${nutritionContext}${foodMemoryContext}`;
 
-    // --- 2つのLLM呼び出しを並列実行 ---
+    // --- LLM呼び出し（順番に実行、並列だとGroqのrate limitに引っかかる） ---
+
+    let assistantMessage = "";
+    let extractedJson = "{}";
 
     // 呼び出し1: チャット応答を生成
-    const chatPromise = groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      messages: [
-        {
-          role: "system",
-          content: `${CHAT_SYSTEM_PROMPT}\n\n${contextInfo}`,
-        },
-        ...(chatHistory || [])
-          .reverse()
-          .map((m: { role: string; content: string }) => ({
-            role: m.role as "user" | "assistant",
-            content: m.content,
-          })),
-        { role: "user" as const, content: message },
-      ],
-      max_tokens: 1024,
-      temperature: 0.85,
-    });
+    try {
+      const chatResponse = await groq.chat.completions.create({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          {
+            role: "system",
+            content: `${CHAT_SYSTEM_PROMPT}\n\n${contextInfo}`,
+          },
+          ...(chatHistory || [])
+            .reverse()
+            .map((m: { role: string; content: string }) => ({
+              role: m.role as "user" | "assistant",
+              content: m.content,
+            })),
+          { role: "user" as const, content: message },
+        ],
+        max_tokens: 1024,
+        temperature: 0.85,
+      });
+      assistantMessage = chatResponse.choices[0]?.message?.content || "";
+    } catch (chatError: unknown) {
+      const errDetail = chatError instanceof Error ? chatError.message : String(chatError);
+      console.error("Chat LLM error:", errDetail);
 
-    // 呼び出し2: データ抽出（JSON mode強制）
-    const extractPromise = groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      messages: [
-        {
-          role: "system",
-          content: EXTRACT_SYSTEM_PROMPT.replace("{{TODAY}}", today) + `\n\n${contextInfo}`,
-        },
-        { role: "user", content: message },
-      ],
-      max_tokens: 512,
-      temperature: 0,
-      response_format: { type: "json_object" },
-    });
+      // chatが失敗してもextractだけ試す
+      let fallbackEntries: Record<string, unknown>[] = [];
+      try {
+        const extractResponse = await groq.chat.completions.create({
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            {
+              role: "system",
+              content: EXTRACT_SYSTEM_PROMPT.replace("{{TODAY}}", today) + `\n\n${contextInfo}`,
+            },
+            { role: "user", content: message },
+          ],
+          max_tokens: 512,
+          temperature: 0,
+          response_format: { type: "json_object" },
+        });
+        const parsed = JSON.parse(extractResponse.choices[0]?.message?.content || "{}");
+        if (parsed?.entries?.length > 0) fallbackEntries = parsed.entries;
+      } catch {}
 
-    const results = await Promise.allSettled([chatPromise, extractPromise]);
-
-    const chatResult = results[0];
-    const extractResult = results[1];
-
-    if (chatResult.status === "rejected") {
-      console.error("Chat LLM error:", chatResult.reason?.message || chatResult.reason);
-      // extractが成功してればデータだけでも返す
-      const fallbackEntries: Record<string, unknown>[] = [];
-      if (extractResult.status === "fulfilled") {
-        try {
-          const parsed = JSON.parse(extractResult.value.choices[0]?.message?.content || "{}");
-          if (parsed?.entries?.length > 0) fallbackEntries.push(...parsed.entries);
-        } catch {}
-      }
       return NextResponse.json({
-        message: "ごめん、ちょっと調子悪い...もう一回送ってみて！",
+        message: `ごめん、ちょっと調子悪い...もう一回送ってみて！\n(${errDetail.slice(0, 200)})`,
         pendingEntries: fallbackEntries.length > 0 ? fallbackEntries : undefined,
       });
     }
 
-    const assistantMessage = chatResult.value.choices[0]?.message?.content || "";
-    const extractedJson = extractResult.status === "fulfilled"
-      ? (extractResult.value.choices[0]?.message?.content || "{}")
-      : "{}";
+    // 呼び出し2: データ抽出（JSON mode強制）— chat成功後に実行
+    try {
+      const extractResponse = await groq.chat.completions.create({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          {
+            role: "system",
+            content: EXTRACT_SYSTEM_PROMPT.replace("{{TODAY}}", today) + `\n\n${contextInfo}`,
+          },
+          { role: "user", content: message },
+        ],
+        max_tokens: 512,
+        temperature: 0,
+        response_format: { type: "json_object" },
+      });
+      extractedJson = extractResponse.choices[0]?.message?.content || "{}";
+    } catch (extractError: unknown) {
+      console.error("Extract LLM error:", extractError instanceof Error ? extractError.message : extractError);
+    }
 
     // データ抽出結果をパース（自動保存せず、フロントに返す）
     let extractedEntries: Record<string, unknown>[] = [];
