@@ -260,7 +260,7 @@ export async function POST(req: NextRequest) {
       .from("chat_messages")
       .select("role, content")
       .order("created_at", { ascending: false })
-      .limit(20);
+      .limit(10);
 
     const contextInfo = `${todaySummary}\n${recentHistory}${nutritionContext}${foodMemoryContext}`;
 
