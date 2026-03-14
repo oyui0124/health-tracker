@@ -5,6 +5,24 @@ import { useState, useRef, useEffect } from "react";
 type Message = {
   role: "user" | "assistant";
   content: string;
+  pendingEntries?: PendingEntry[];
+};
+
+type PendingEntry = {
+  action: string;
+  type: string;
+  date?: string;
+  meal_type?: string;
+  description?: string;
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+  weight?: number;
+  duration_minutes?: number;
+  calories_burned?: number;
+  id?: string;
+  updates?: Record<string, unknown>;
 };
 
 const STORAGE_KEY = "health-tracker-chat";
@@ -20,7 +38,6 @@ function loadCachedMessages(): Message[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [GREETING];
     const { messages, timestamp } = JSON.parse(raw);
-    // 3時間以内なら復元
     if (Date.now() - timestamp < 3 * 60 * 60 * 1000 && messages?.length > 0) {
       return messages;
     }
@@ -46,16 +63,15 @@ export default function ChatView() {
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [savingEntries, setSavingEntries] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
-  // DBからチャット履歴を読み込み（初回のみ、キャッシュがなければ）
   useEffect(() => {
     if (historyLoaded) return;
     const cached = loadCachedMessages();
-    // キャッシュに挨拶しかない場合はDBから読む
     if (cached.length <= 1) {
       fetch("/api/chat-history")
         .then((r) => r.json())
@@ -73,7 +89,6 @@ export default function ChatView() {
     }
   }, [historyLoaded]);
 
-  // メッセージ変更時にlocalStorageに保存
   useEffect(() => {
     if (messages.length > 1) {
       saveCachedMessages(messages);
@@ -87,6 +102,40 @@ export default function ChatView() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // エントリを保存
+  const saveEntry = async (msgIndex: number, entryIndex: number, entry: PendingEntry) => {
+    const key = `${msgIndex}-${entryIndex}`;
+    setSavingEntries((prev) => new Set(prev).add(key));
+    try {
+      const res = await fetch("/api/chat/save-entry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entry }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        // 保存成功: pendingEntriesからこのエントリを除去
+        setMessages((prev) =>
+          prev.map((msg, i) => {
+            if (i !== msgIndex || !msg.pendingEntries) return msg;
+            const updated = msg.pendingEntries.map((e, j) =>
+              j === entryIndex ? { ...e, _saved: true } : e
+            ) as PendingEntry[];
+            return { ...msg, pendingEntries: updated };
+          })
+        );
+      }
+    } catch {
+      // fail silently
+    } finally {
+      setSavingEntries((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+    }
+  };
 
   const sendMessage = async () => {
     const trimmed = input.trim();
@@ -118,7 +167,11 @@ export default function ChatView() {
       } else {
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: data.message },
+          {
+            role: "assistant",
+            content: data.message,
+            pendingEntries: data.pendingEntries || undefined,
+          },
         ]);
       }
     } catch {
@@ -218,23 +271,91 @@ export default function ChatView() {
     );
   };
 
+  // エントリの表示ラベル
+  const entryLabel = (e: PendingEntry) => {
+    if (e.action === "delete") return `${e.description || "記録"}を削除`;
+    if (e.action === "edit") return `${e.description || "記録"}を修正`;
+    if (e.type === "meal") return `${e.description} (${e.calories}kcal)`;
+    if (e.type === "weight") return `体重 ${e.weight}kg`;
+    if (e.type === "exercise") return `${e.description} (-${e.calories_burned}kcal)`;
+    return "記録";
+  };
+
+  const entryIcon = (e: PendingEntry) => {
+    if (e.action === "delete") return "🗑";
+    if (e.action === "edit") return "✏️";
+    if (e.type === "meal") return "🍽";
+    if (e.type === "weight") return "⚖️";
+    if (e.type === "exercise") return "🏃";
+    return "📝";
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-3 space-y-3">
         {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`chat-bubble flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-          >
+          <div key={i}>
             <div
-              className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap ${
-                msg.role === "user"
-                  ? "bg-green-500 text-white rounded-br-md"
-                  : "bg-gray-100 text-gray-800 rounded-bl-md"
-              }`}
+              className={`chat-bubble flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
-              {renderContent(msg.content, msg.role === "user")}
+              <div
+                className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap ${
+                  msg.role === "user"
+                    ? "bg-green-500 text-white rounded-br-md"
+                    : "bg-gray-100 text-gray-800 rounded-bl-md"
+                }`}
+              >
+                {renderContent(msg.content, msg.role === "user")}
+              </div>
             </div>
+
+            {/* 記録追加の確認カード */}
+            {msg.pendingEntries && msg.pendingEntries.length > 0 && (
+              <div className="flex justify-start mt-2">
+                <div className="max-w-[85%] rounded-2xl border border-green-200 bg-green-50 p-3 space-y-2">
+                  <div className="text-[12px] font-semibold text-green-700">記録に追加しますか？</div>
+                  {msg.pendingEntries.map((entry, j) => {
+                    const isSaved = (entry as PendingEntry & { _saved?: boolean })._saved;
+                    const isSaving = savingEntries.has(`${i}-${j}`);
+                    return (
+                      <button
+                        key={j}
+                        onClick={() => !isSaved && !isSaving && saveEntry(i, j, entry)}
+                        disabled={isSaved || isSaving}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all ${
+                          isSaved
+                            ? "bg-green-100 border border-green-300"
+                            : isSaving
+                              ? "bg-white border border-gray-200 opacity-60"
+                              : "bg-white border border-gray-200 active:bg-green-50 active:border-green-300"
+                        }`}
+                      >
+                        <span className="text-lg">{entryIcon(entry)}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-medium text-gray-800 truncate">
+                            {entryLabel(entry)}
+                          </div>
+                          {entry.type === "meal" && entry.protein != null && (
+                            <div className="text-[11px] text-gray-400">
+                              P:{entry.protein}g F:{entry.fat}g C:{entry.carbs}g
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-[12px] font-semibold shrink-0">
+                          {isSaved ? (
+                            <span className="text-green-600">追加済み ✓</span>
+                          ) : isSaving ? (
+                            <span className="text-gray-400">保存中...</span>
+                          ) : (
+                            <span className="text-green-600">追加</span>
+                          )}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         ))}
 

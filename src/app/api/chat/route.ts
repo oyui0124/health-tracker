@@ -233,106 +233,6 @@ ${Object.entries(caloriesByDate).map(([d, c]) => `- ${d}: ${c} kcal`).join("\n")
 `;
 }
 
-const TABLE_MAP: Record<string, string> = {
-  meal: "meal_logs",
-  weight: "weight_logs",
-  exercise: "exercise_logs",
-};
-
-async function processEntries(parsed: { entries: Array<Record<string, unknown>> }) {
-  const db = getSupabase();
-  const today = getToday();
-  const results: string[] = [];
-
-  for (const entry of parsed.entries) {
-    const action = (entry.action as string) || "add";
-    const entryDate = (entry.date as string) || today;
-
-    try {
-      if (action === "add") {
-        if (entry.type === "meal") {
-          const { error } = await db.from("meal_logs").insert({
-            date: entryDate,
-            meal_type: entry.meal_type,
-            description: entry.description,
-            calories: entry.calories,
-            protein: entry.protein,
-            carbs: entry.carbs,
-            fat: entry.fat,
-          });
-          if (error) {
-            console.error("meal insert error:", error);
-            results.push(`❌ 食事の保存失敗: ${error.message}`);
-          } else {
-            results.push(`✅ 食事を記録: ${entry.description}`);
-          }
-        } else if (entry.type === "weight") {
-          const { error } = await db
-            .from("weight_logs")
-            .upsert({ date: entryDate, weight: entry.weight }, { onConflict: "date" });
-          if (error) {
-            console.error("weight upsert error:", error);
-            results.push(`❌ 体重の保存失敗: ${error.message}`);
-          } else {
-            results.push(`✅ 体重を記録: ${entry.weight}kg`);
-          }
-        } else if (entry.type === "exercise") {
-          const { error } = await db.from("exercise_logs").insert({
-            date: entryDate,
-            description: entry.description,
-            duration_minutes: entry.duration_minutes,
-            calories_burned: entry.calories_burned,
-          });
-          if (error) {
-            console.error("exercise insert error:", error);
-            results.push(`❌ 運動の保存失敗: ${error.message}`);
-          } else {
-            results.push(`✅ 運動を記録: ${entry.description}`);
-          }
-        }
-      } else if (action === "delete" && entry.id) {
-        const table = TABLE_MAP[entry.type as string];
-        if (table) {
-          const { data: old } = await db.from(table).select("*").eq("id", entry.id).single();
-          if (old) {
-            await db.from("change_log").insert({
-              action: "delete",
-              table_name: table,
-              record_id: entry.id,
-              old_data: old,
-            });
-            await db.from(table).delete().eq("id", entry.id);
-            results.push(`✅ 記録を削除`);
-          }
-        }
-      } else if (action === "edit" && entry.id && entry.updates) {
-        const table = TABLE_MAP[entry.type as string];
-        if (table) {
-          const { data: old } = await db.from(table).select("*").eq("id", entry.id).single();
-          if (old) {
-            await db
-              .from(table)
-              .update(entry.updates as Record<string, unknown>)
-              .eq("id", entry.id);
-            await db.from("change_log").insert({
-              action: "edit",
-              table_name: table,
-              record_id: entry.id as string,
-              old_data: old,
-              new_data: entry.updates,
-            });
-            results.push(`✅ 記録を修正`);
-          }
-        }
-      }
-    } catch (e) {
-      console.error("Error processing entry:", e);
-      results.push(`❌ エラー: ${e}`);
-    }
-  }
-  return results;
-}
-
 export async function POST(req: NextRequest) {
   try {
     const db = getSupabase();
@@ -405,16 +305,13 @@ export async function POST(req: NextRequest) {
     const assistantMessage = chatResponse.choices[0]?.message?.content || "";
     const extractedJson = extractResponse.choices[0]?.message?.content || "{}";
 
-    // データ抽出結果を処理
-    let saveResults: string[] = [];
+    // データ抽出結果をパース（自動保存せず、フロントに返す）
+    let extractedEntries: Record<string, unknown>[] = [];
     try {
       const parsed = JSON.parse(extractedJson);
       console.log("Extracted data:", JSON.stringify(parsed).slice(0, 300));
-      if (parsed?.entries?.length > 0) {
-        saveResults = await processEntries(parsed);
-        console.log("Save results:", saveResults);
-      }
-      // ユーザーが教えてくれた栄養情報を保存
+      extractedEntries = parsed?.entries || [];
+      // food_memoriesは自動保存（ユーザーが教えた情報なので確認不要）
       if (parsed?.food_memories?.length > 0) {
         for (const mem of parsed.food_memories) {
           const { error } = await db.from("food_memories").upsert(
@@ -429,7 +326,6 @@ export async function POST(req: NextRequest) {
             { onConflict: "food_name" }
           );
           if (error) console.error("food_memory save error:", error);
-          else console.log("Saved food memory:", mem.food_name);
         }
       }
     } catch (e) {
@@ -442,7 +338,11 @@ export async function POST(req: NextRequest) {
     await db.from("chat_messages").insert({ role: "user", content: message });
     await db.from("chat_messages").insert({ role: "assistant", content: cleanMessage });
 
-    return NextResponse.json({ message: cleanMessage });
+    // 抽出データをフロントに返す（ユーザーが確認して保存）
+    return NextResponse.json({
+      message: cleanMessage,
+      pendingEntries: extractedEntries.length > 0 ? extractedEntries : undefined,
+    });
   } catch (error) {
     console.error("Chat API error:", error);
     return NextResponse.json(
