@@ -168,6 +168,28 @@ function getAdviceForDate(
   return tips;
 }
 
+const DAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
+
+function getWeekDays(selectedDate: string): { date: string; dayLabel: string; dayNum: number; isToday: boolean; isSelected: boolean }[] {
+  const sel = new Date(selectedDate + "T00:00:00");
+  const today = getLocalDate();
+  const days: { date: string; dayLabel: string; dayNum: number; isToday: boolean; isSelected: boolean }[] = [];
+  // Show 7 days centered around selected, but cap at today
+  for (let i = -3; i <= 3; i++) {
+    const d = new Date(sel);
+    d.setDate(d.getDate() + i);
+    const ds = getLocalDate(d);
+    days.push({
+      date: ds,
+      dayLabel: DAY_LABELS[d.getDay()],
+      dayNum: d.getDate(),
+      isToday: ds === today,
+      isSelected: ds === selectedDate,
+    });
+  }
+  return days;
+}
+
 export default function RecordsView() {
   const [date, setDate] = useState(getLocalDate());
   const [showCalendar, setShowCalendar] = useState(false);
@@ -180,6 +202,8 @@ export default function RecordsView() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
   const [addType, setAddType] = useState<"meal" | "exercise" | "weight" | null>(null);
+  const [filter, setFilter] = useState<"all" | "meal" | "exercise">("all");
+  const [showAddMenu, setShowAddMenu] = useState(false);
 
   const fetchRecords = useCallback(() => {
     setLoading(true);
@@ -244,12 +268,6 @@ export default function RecordsView() {
     fetchRecords();
   };
 
-  const changeDate = (offset: number) => {
-    const d = new Date(date + "T00:00:00");
-    d.setDate(d.getDate() + offset);
-    setDate(getLocalDate(d));
-  };
-
   const isToday = date === getLocalDate();
 
   const totalCalories = meals.reduce((s, m) => s + (m.calories || 0), 0);
@@ -285,6 +303,13 @@ export default function RecordsView() {
     new Date().getHours()
   );
 
+  const weekDays = getWeekDays(date);
+  const selectedMonth = new Date(date + "T00:00:00").getMonth() + 1;
+
+  // filtered records
+  const filteredMeals = filter === "exercise" ? [] : meals;
+  const filteredExercises = filter === "meal" ? [] : exercises;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full text-gray-400">
@@ -294,324 +319,340 @@ export default function RecordsView() {
   }
 
   return (
-    <div className="h-full overflow-y-auto no-scrollbar px-4 py-4 space-y-4">
-      {/* 日付ナビゲーション + カレンダー */}
-      <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100">
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => changeDate(-1)}
-            className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 active:bg-gray-200 text-lg font-bold"
-          >
-            &lt;
-          </button>
-          <button
-            onClick={() => setShowCalendar(!showCalendar)}
-            className="text-center active:opacity-60"
-          >
-            <div className="text-lg font-bold text-gray-800">
-              {date.slice(5).replace("-", "/")}
-            </div>
-            {isToday ? (
-              <div className="text-xs text-green-500 font-medium">今日</div>
-            ) : (
-              <div className="text-[10px] text-gray-400">タップで日付選択</div>
-            )}
-          </button>
-          <button
-            onClick={() => changeDate(1)}
-            disabled={isToday}
-            className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 active:bg-gray-200 text-lg font-bold disabled:opacity-30"
-          >
-            &gt;
-          </button>
-        </div>
-        {showCalendar && (
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            <input
-              type="date"
-              value={date}
-              max={getLocalDate()}
-              onChange={(e) => {
-                setDate(e.target.value);
-                setShowCalendar(false);
-              }}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:border-green-500"
-            />
-            <button
-              onClick={() => {
-                setDate(getLocalDate());
-                setShowCalendar(false);
-              }}
-              className="w-full mt-2 py-2 text-sm text-green-600 font-medium active:bg-green-50 rounded-lg"
-            >
-              今日に戻る
-            </button>
-          </div>
-        )}
+    <div className="h-full overflow-y-auto no-scrollbar bg-green-50/40">
+      {/* 月ヘッダー */}
+      <div className="text-center pt-3 pb-1">
+        <button
+          onClick={() => setShowCalendar(!showCalendar)}
+          className="text-base font-bold text-gray-800 active:opacity-60"
+        >
+          {selectedMonth}月
+        </button>
       </div>
 
-      {/* カロリーサマリー + プログレス */}
-      <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-        <div className="flex items-baseline justify-between mb-1">
-          <div>
-            <span className="text-2xl font-bold text-gray-800">{totalCalories - totalBurned}</span>
-            <span className="text-sm text-gray-400 ml-1">kcal</span>
+      {/* カレンダー日付選択 */}
+      {showCalendar && (
+        <div className="px-5 pb-2">
+          <input
+            type="date"
+            value={date}
+            max={getLocalDate()}
+            onChange={(e) => {
+              setDate(e.target.value);
+              setShowCalendar(false);
+            }}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-base focus:outline-none focus:border-green-500 bg-white"
+          />
+          <button
+            onClick={() => { setDate(getLocalDate()); setShowCalendar(false); }}
+            className="w-full mt-1.5 py-2 text-sm text-green-600 font-medium active:bg-green-50 rounded-lg"
+          >
+            今日に戻る
+          </button>
+        </div>
+      )}
+
+      {/* 週スクロール */}
+      <div className="flex justify-between px-4 pb-3">
+        {weekDays.map((d) => (
+          <button
+            key={d.date}
+            onClick={() => setDate(d.date)}
+            className="flex flex-col items-center gap-0.5"
+          >
+            <span className={`text-[11px] font-medium ${d.isSelected ? "text-white" : "text-gray-400"}`}>
+              {d.dayLabel}
+            </span>
+            <span
+              className={`w-10 h-10 rounded-xl flex items-center justify-center text-base font-bold transition-colors ${
+                d.isSelected
+                  ? "bg-green-500 text-white shadow-md shadow-green-200"
+                  : d.isToday
+                    ? "text-green-600 bg-green-100"
+                    : "text-gray-600"
+              }`}
+            >
+              {d.dayNum}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <div className="px-4 space-y-3 pb-24">
+        {/* カロリーサマリーカード */}
+        <div className="bg-white rounded-2xl p-4 shadow-sm">
+          <div className="flex items-baseline justify-between mb-1">
+            <div>
+              <span className="text-3xl font-extrabold text-gray-900">{totalCalories - totalBurned}</span>
+              <span className="text-sm text-gray-400 ml-1">kcal</span>
+            </div>
+            {goal && (
+              <span className="text-sm text-gray-400">/ {goal.daily_calorie_target}kcal</span>
+            )}
+          </div>
+          <div className="flex gap-4 text-xs text-gray-400 mb-2.5">
+            <span>摂取：<b className="text-gray-600">{totalCalories}</b>kcal</span>
+            <span>運動：<b className="text-gray-600">{totalBurned}</b>kcal</span>
           </div>
           {goal && (
-            <span className="text-xs text-gray-400">
-              / {goal.daily_calorie_target} kcal
-            </span>
-          )}
-        </div>
-        <div className="flex gap-4 text-xs text-gray-400 mb-2">
-          <span>摂取 {totalCalories}</span>
-          <span>消費 -{totalBurned}</span>
-        </div>
-        {goal && totalCalories > 0 && (
-          <div>
-            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-3 bg-gray-100 rounded-full overflow-hidden relative">
               <div
                 className={`h-full rounded-full transition-all ${
-                  totalCalories - totalBurned > goal.daily_calorie_target
-                    ? "bg-red-400"
-                    : "bg-green-400"
+                  totalCalories - totalBurned > goal.daily_calorie_target ? "bg-red-400" : "bg-green-400"
                 }`}
-                style={{
-                  width: `${Math.min(
-                    100,
-                    ((totalCalories - totalBurned) /
-                      goal.daily_calorie_target) *
-                      100
-                  )}%`,
-                }}
+                style={{ width: `${Math.min(100, ((totalCalories - totalBurned) / goal.daily_calorie_target) * 100)}%` }}
               />
-            </div>
-            <div className="text-[10px] text-gray-400 text-right mt-0.5">
-              {totalCalories - totalBurned > goal.daily_calorie_target
-                ? `${Math.round(totalCalories - totalBurned - goal.daily_calorie_target)} kcal 超過`
-                : `残り ${Math.round(goal.daily_calorie_target - totalCalories + totalBurned)} kcal`}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* PFCバランス */}
-      {(totalProtein > 0 || totalCarbs > 0 || totalFat > 0) && (
-        <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-          <div className="text-[10px] text-gray-400 mb-2">PFCバランス</div>
-          {pfcRatio && (
-            <div className="mb-2">
-              <div className="flex h-3 rounded-full overflow-hidden">
-                <div className="bg-gray-700" style={{ width: `${pfcRatio.p}%` }} />
-                <div className="bg-gray-400" style={{ width: `${pfcRatio.c}%` }} />
-                <div className="bg-gray-300" style={{ width: `${pfcRatio.f}%` }} />
-              </div>
+              {totalBurned > 0 && (
+                <div
+                  className="absolute top-0 h-full bg-gray-300 rounded-r-full"
+                  style={{
+                    left: `${Math.min(100, ((totalCalories - totalBurned) / goal.daily_calorie_target) * 100)}%`,
+                    width: `${Math.min(100 - Math.min(100, ((totalCalories - totalBurned) / goal.daily_calorie_target) * 100), (totalBurned / goal.daily_calorie_target) * 100)}%`,
+                  }}
+                />
+              )}
             </div>
           )}
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div>
-              <div className="text-sm font-bold text-gray-700">
-                {Math.round(totalProtein)}<span className="text-gray-300 font-normal">/{goal ? Math.round(goal.daily_calorie_target * 0.175 / 4) : "—"}</span>
-              </div>
-              <div className="text-[10px] text-gray-400">P (g)</div>
-            </div>
-            <div>
-              <div className="text-sm font-bold text-gray-700">
-                {Math.round(totalCarbs)}<span className="text-gray-300 font-normal">/{goal ? Math.round(goal.daily_calorie_target * 0.575 / 4) : "—"}</span>
-              </div>
-              <div className="text-[10px] text-gray-400">C (g)</div>
-            </div>
-            <div>
-              <div className="text-sm font-bold text-gray-700">
-                {Math.round(totalFat)}<span className="text-gray-300 font-normal">/{goal ? Math.round(goal.daily_calorie_target * 0.25 / 9) : "—"}</span>
-              </div>
-              <div className="text-[10px] text-gray-400">F (g)</div>
-            </div>
-          </div>
         </div>
-      )}
 
-      {/* アドバイス（全日付） */}
-      {adviceTips.length > 0 && (
-        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-100">
-          <div className="text-xs font-bold text-orange-600 mb-2">
-            {isToday ? "今日のアドバイス" : `${date.slice(5).replace("-", "/")} の振り返り`}
-          </div>
-          <div className="space-y-2">
-            {adviceTips.map((tip, i) => (
-              <div key={i} className="text-[13px] text-gray-700 flex gap-2">
-                <span className="shrink-0 text-orange-400">-</span>
-                <span>{tip}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 追加ボタン */}
-      <div className="flex gap-2">
-        <button
-          onClick={() => setAddType("meal")}
-          className="flex-1 py-2 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium active:bg-gray-50"
-        >
-          + 食事
-        </button>
-        <button
-          onClick={() => setAddType("exercise")}
-          className="flex-1 py-2 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium active:bg-gray-50"
-        >
-          + 運動
-        </button>
-        <button
-          onClick={() => setAddType("weight")}
-          className="flex-1 py-2 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium active:bg-gray-50"
-        >
-          + 体重
-        </button>
-      </div>
-
-      {/* 食事一覧 */}
-      <div>
-        <h3 className="text-sm font-semibold text-gray-500 mb-2">
-          食事 ({meals.length}件)
-        </h3>
-        {meals.length === 0 ? (
-          <p className="text-sm text-gray-300 text-center py-4">記録なし</p>
-        ) : (
-          <div className="space-y-2">
-            {meals.map((m) => (
-              <div
-                key={m.id}
-                className="bg-white rounded-xl p-3 shadow-sm border border-gray-100"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium shrink-0">
-                        {MEAL_TYPE_LABEL[m.meal_type] || m.meal_type}
-                      </span>
-                      <span className="text-sm font-medium text-gray-800 truncate">
-                        {m.description}
-                      </span>
-                    </div>
-                    <div className="flex gap-3 mt-1.5 text-xs text-gray-400">
-                      <span className="font-medium text-green-600">
-                        {m.calories} kcal
-                      </span>
-                      <span>P:{m.protein || 0}g</span>
-                      <span>F:{m.fat || 0}g</span>
-                      <span>C:{m.carbs || 0}g</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 ml-2 shrink-0">
-                    <button
-                      onClick={() =>
-                        setEditTarget({ type: "meal", data: { ...m } })
-                      }
-                      className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500 active:bg-blue-100 text-base font-bold"
-                    >
-                      ✎
-                    </button>
-                    <button
-                      onClick={() => handleDelete("meal", m.id)}
-                      disabled={deleting === m.id}
-                      className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center text-red-500 active:bg-red-100 text-base font-bold"
-                    >
-                      {deleting === m.id ? "…" : "✕"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* 運動一覧 */}
-      <div>
-        <h3 className="text-sm font-semibold text-gray-500 mb-2">
-          運動 ({exercises.length}件)
-        </h3>
-        {exercises.length === 0 ? (
-          <p className="text-sm text-gray-300 text-center py-4">記録なし</p>
-        ) : (
-          <div className="space-y-2">
-            {exercises.map((e) => (
-              <div
-                key={e.id}
-                className="bg-white rounded-xl p-3 shadow-sm border border-gray-100"
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="text-sm font-medium text-gray-800">
-                      {e.description}
-                    </div>
-                    <div className="flex gap-3 mt-1 text-xs text-gray-400">
-                      <span className="text-orange-500 font-medium">
-                        -{e.calories_burned} kcal
-                      </span>
-                      <span>{e.duration_minutes}分</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 ml-2 shrink-0">
-                    <button
-                      onClick={() =>
-                        setEditTarget({ type: "exercise", data: { ...e } })
-                      }
-                      className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500 active:bg-blue-100 text-base font-bold"
-                    >
-                      ✎
-                    </button>
-                    <button
-                      onClick={() => handleDelete("exercise", e.id)}
-                      disabled={deleting === e.id}
-                      className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center text-red-500 active:bg-red-100 text-base font-bold"
-                    >
-                      {deleting === e.id ? "…" : "✕"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* 体重 */}
-      {weights.length > 0 && (
-        <div>
-          <h3 className="text-sm font-semibold text-gray-500 mb-2">体重</h3>
-          {weights.map((w) => (
-            <div
-              key={w.id}
-              className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex items-center justify-between"
-            >
-              <span className="text-lg font-bold text-blue-500">
-                {w.weight} kg
+        {/* 体重 + PFC 横並び */}
+        <div className="flex gap-3">
+          {/* 体重カード */}
+          <div className="bg-white rounded-2xl p-3 shadow-sm flex-shrink-0" style={{ minWidth: "110px" }}>
+            <div className="text-xs font-semibold text-gray-500 mb-1">体重</div>
+            <div className="flex items-baseline">
+              <span className="text-3xl font-extrabold text-gray-900">
+                {weights.length > 0 ? weights[0].weight : latestWeight || "—"}
               </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() =>
-                    setEditTarget({ type: "weight", data: { ...w } })
-                  }
-                  className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500 active:bg-blue-100 text-base font-bold"
-                >
-                  ✎
-                </button>
-                <button
-                  onClick={() => handleDelete("weight", w.id)}
-                  disabled={deleting === w.id}
-                  className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center text-red-500 active:bg-red-100 text-base font-bold"
-                >
-                  {deleting === w.id ? "…" : "✕"}
-                </button>
+              <span className="text-sm text-gray-400 ml-0.5">kg</span>
+            </div>
+          </div>
+
+          {/* PFCカード */}
+          <div className="bg-white rounded-2xl p-3 shadow-sm flex-1">
+            <div className="text-xs font-semibold text-gray-500 mb-1.5">PFCバランス</div>
+            {pfcRatio && (
+              <div className="mb-2">
+                <div className="flex h-2.5 rounded-full overflow-hidden">
+                  <div className="bg-green-600" style={{ width: `${pfcRatio.p}%` }} />
+                  <div className="bg-green-400" style={{ width: `${pfcRatio.c}%` }} />
+                  <div className="bg-green-200" style={{ width: `${pfcRatio.f}%` }} />
+                </div>
+              </div>
+            )}
+            <div className="grid grid-cols-3 gap-1 text-center">
+              <div>
+                <div className="text-sm font-bold text-gray-800">
+                  {Math.round(totalProtein)}<span className="text-gray-300 font-normal text-xs">/{goal ? Math.round(goal.daily_calorie_target * 0.175 / 4) : "—"}</span>
+                </div>
+                <div className="text-[10px] text-gray-400">P</div>
+              </div>
+              <div>
+                <div className="text-sm font-bold text-gray-800">
+                  {Math.round(totalFat)}<span className="text-gray-300 font-normal text-xs">/{goal ? Math.round(goal.daily_calorie_target * 0.25 / 9) : "—"}</span>
+                </div>
+                <div className="text-[10px] text-gray-400">F</div>
+              </div>
+              <div>
+                <div className="text-sm font-bold text-gray-800">
+                  {Math.round(totalCarbs)}<span className="text-gray-300 font-normal text-xs">/{goal ? Math.round(goal.daily_calorie_target * 0.575 / 4) : "—"}</span>
+                </div>
+                <div className="text-[10px] text-gray-400">C</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* アドバイス */}
+        {adviceTips.length > 0 && (
+          <div className="bg-orange-50 rounded-2xl p-4 border border-orange-100">
+            <div className="flex items-center gap-1.5 mb-2">
+              <span className="text-base">💡</span>
+              <span className="text-xs font-bold text-orange-600">
+                {isToday ? "アドバイス" : "振り返り"}
+              </span>
+            </div>
+            <div className="space-y-1.5">
+              {adviceTips.map((tip, i) => (
+                <div key={i} className="text-[13px] text-gray-700 flex gap-2">
+                  <span className="shrink-0 text-orange-300 mt-0.5">•</span>
+                  <span>{tip}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* フィルタータブ */}
+        <div className="flex bg-gray-100 rounded-xl p-1">
+          {([["all", "すべて"], ["meal", "食事"], ["exercise", "運動"]] as const).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setFilter(key)}
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+                filter === key
+                  ? "bg-green-100 text-green-700 shadow-sm"
+                  : "text-gray-500"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* 記録一覧 */}
+        <div className="space-y-2.5">
+          {/* 食事 */}
+          {filteredMeals.map((m) => (
+            <div key={m.id} className="bg-white rounded-2xl p-3.5 shadow-sm">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm">🍽</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">
+                      {MEAL_TYPE_LABEL[m.meal_type] || m.meal_type}
+                    </span>
+                  </div>
+                  <div className="text-[15px] font-medium text-gray-800 mb-1">
+                    {m.description}
+                  </div>
+                  <div className="flex gap-3 text-xs text-gray-400">
+                    <span className="font-semibold text-green-600">{m.calories} kcal</span>
+                    <span>P:{m.protein || 0}g</span>
+                    <span>F:{m.fat || 0}g</span>
+                    <span>C:{m.carbs || 0}g</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 ml-2 shrink-0">
+                  <button
+                    onClick={() => setEditTarget({ type: "meal", data: { ...m } })}
+                    className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 active:bg-gray-200 text-sm"
+                  >
+                    ✎
+                  </button>
+                  <button
+                    onClick={() => handleDelete("meal", m.id)}
+                    disabled={deleting === m.id}
+                    className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 active:bg-gray-200 text-sm"
+                  >
+                    {deleting === m.id ? "…" : "✕"}
+                  </button>
+                </div>
               </div>
             </div>
           ))}
-        </div>
-      )}
 
-      <div className="h-4" />
+          {/* 運動 */}
+          {filteredExercises.map((e) => (
+            <div key={e.id} className="bg-white rounded-2xl p-3.5 shadow-sm">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm">🏃</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 font-medium">
+                      運動
+                    </span>
+                  </div>
+                  <div className="text-[15px] font-medium text-gray-800 mb-1">
+                    {e.description}
+                  </div>
+                  <div className="flex gap-3 text-xs text-gray-400">
+                    <span className="font-semibold text-orange-500">-{e.calories_burned} kcal</span>
+                    <span>{e.duration_minutes}分</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 ml-2 shrink-0">
+                  <button
+                    onClick={() => setEditTarget({ type: "exercise", data: { ...e } })}
+                    className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 active:bg-gray-200 text-sm"
+                  >
+                    ✎
+                  </button>
+                  <button
+                    onClick={() => handleDelete("exercise", e.id)}
+                    disabled={deleting === e.id}
+                    className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 active:bg-gray-200 text-sm"
+                  >
+                    {deleting === e.id ? "…" : "✕"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* 体重 */}
+          {filter === "all" && weights.map((w) => (
+            <div key={w.id} className="bg-white rounded-2xl p-3.5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">⚖️</span>
+                  <span className="text-[15px] font-medium text-gray-800">{w.weight} kg</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setEditTarget({ type: "weight", data: { ...w } })}
+                    className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 active:bg-gray-200 text-sm"
+                  >
+                    ✎
+                  </button>
+                  <button
+                    onClick={() => handleDelete("weight", w.id)}
+                    disabled={deleting === w.id}
+                    className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 active:bg-gray-200 text-sm"
+                  >
+                    {deleting === w.id ? "…" : "✕"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* 空の場合 */}
+          {filteredMeals.length === 0 && filteredExercises.length === 0 && (filter !== "all" || weights.length === 0) && (
+            <p className="text-center text-gray-300 py-8 text-sm">記録がありません</p>
+          )}
+        </div>
+
+        <div className="h-4" />
+      </div>
+
+      {/* FAB追加ボタン */}
+      <div className="fixed bottom-20 right-5 z-40">
+        {showAddMenu && (
+          <div className="absolute bottom-14 right-0 bg-white rounded-2xl shadow-lg border border-gray-100 py-2 w-36 animate-in fade-in slide-in-from-bottom-2">
+            <button
+              onClick={() => { setAddType("meal"); setShowAddMenu(false); }}
+              className="w-full px-4 py-2.5 text-left text-sm text-gray-700 active:bg-gray-50 flex items-center gap-2"
+            >
+              <span>🍽</span> 食事
+            </button>
+            <button
+              onClick={() => { setAddType("exercise"); setShowAddMenu(false); }}
+              className="w-full px-4 py-2.5 text-left text-sm text-gray-700 active:bg-gray-50 flex items-center gap-2"
+            >
+              <span>🏃</span> 運動
+            </button>
+            <button
+              onClick={() => { setAddType("weight"); setShowAddMenu(false); }}
+              className="w-full px-4 py-2.5 text-left text-sm text-gray-700 active:bg-gray-50 flex items-center gap-2"
+            >
+              <span>⚖️</span> 体重
+            </button>
+          </div>
+        )}
+        <button
+          onClick={() => setShowAddMenu(!showAddMenu)}
+          className="w-14 h-14 rounded-full bg-green-500 text-white shadow-lg shadow-green-200 flex items-center justify-center text-2xl font-light active:bg-green-600 transition-transform"
+          style={{ transform: showAddMenu ? "rotate(45deg)" : "none" }}
+        >
+          +
+        </button>
+      </div>
+
+      {/* クリックアウトでメニュー閉じる */}
+      {showAddMenu && (
+        <div className="fixed inset-0 z-30" onClick={() => setShowAddMenu(false)} />
+      )}
 
       {editTarget && (
         <EditModal
