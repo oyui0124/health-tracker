@@ -282,7 +282,7 @@ export async function POST(req: NextRequest) {
           })),
         { role: "user" as const, content: message },
       ],
-      max_tokens: 512,
+      max_tokens: 1024,
       temperature: 0.85,
     });
 

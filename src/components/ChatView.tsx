@@ -532,7 +532,7 @@ export default function ChatView() {
             onKeyDown={handleKeyDown}
             placeholder="食べたもの、体重、運動を入力..."
             rows={1}
-            className="flex-1 resize-none rounded-full border border-gray-300 px-4 py-2.5 text-[15px] focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 bg-gray-50"
+            className="flex-1 resize-none rounded-2xl border border-gray-300 px-4 py-2.5 text-[15px] focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 bg-gray-50"
           />
           {/* マイクボタン */}
           <button
