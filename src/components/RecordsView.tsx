@@ -369,7 +369,7 @@ export default function RecordsView() {
                   ? "bg-green-500 text-white shadow-lg shadow-green-500/30"
                   : d.isToday
                     ? "text-green-600 bg-green-50 ring-2 ring-green-200"
-                    : "text-gray-700 hover:bg-gray-100"
+                    : "text-gray-700 active:bg-gray-100"
               }`}
             >
               {d.dayNum}
@@ -380,7 +380,7 @@ export default function RecordsView() {
 
       <div className="px-4 space-y-3.5 pb-28">
         {/* カロリーサマリーカード */}
-        <div className="bg-white rounded-3xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+        <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
           <div className="flex items-baseline justify-between mb-1.5">
             <div>
               <span className="text-[34px] font-extrabold text-gray-900 tracking-tight">{totalCalories - totalBurned}</span>
@@ -418,7 +418,7 @@ export default function RecordsView() {
         {/* 体重 + PFC 横並び */}
         <div className="flex gap-3">
           {/* 体重カード */}
-          <div className="bg-white rounded-3xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] flex-shrink-0 w-[120px]">
+          <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 flex-shrink-0 w-[120px]">
             <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">体重</div>
             <div className="flex items-baseline">
               <span className="text-[32px] font-extrabold text-gray-900 tracking-tight leading-none">
@@ -429,7 +429,7 @@ export default function RecordsView() {
           </div>
 
           {/* PFCカード */}
-          <div className="bg-white rounded-3xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] flex-1">
+          <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 flex-1">
             <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">PFCバランス</div>
             {pfcRatio && (
               <div className="mb-2.5">
@@ -465,7 +465,7 @@ export default function RecordsView() {
 
         {/* アドバイス */}
         {adviceTips.length > 0 && (
-          <div className="bg-amber-50 rounded-3xl p-4 border border-amber-200/60 shadow-[0_2px_8px_rgba(245,158,11,0.08)]">
+          <div className="bg-amber-50 rounded-3xl p-4 border border-amber-200/60 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg leading-none">💡</span>
               <span className="text-[13px] font-bold text-amber-700">
@@ -483,30 +483,28 @@ export default function RecordsView() {
           </div>
         )}
 
-        {/* フィルタータブ */}
-        <div className="flex gap-2">
-          {([["all", "すべて"], ["meal", "食事"], ["exercise", "運動"]] as const).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setFilter(key)}
-              className={`px-4 py-2 rounded-full text-[13px] font-semibold transition-all ${
-                filter === key
-                  ? "bg-green-500 text-white shadow-sm shadow-green-500/20"
-                  : "bg-white text-gray-500 border border-gray-200"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* + 追加 ボタン（右寄せ） */}
-        <div className="flex justify-end">
+        {/* フィルタータブ + 追加ボタン */}
+        <div className="flex items-center gap-2">
+          <div className="flex flex-1 bg-gray-100 rounded-xl p-0.5">
+            {([["all", "すべて"], ["meal", "食事"], ["exercise", "運動"]] as const).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setFilter(key)}
+                className={`flex-1 py-2 rounded-[10px] text-[13px] font-semibold transition-all ${
+                  filter === key
+                    ? "bg-white text-gray-800 shadow-sm"
+                    : "text-gray-400"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <button
             onClick={() => setShowAddMenu(!showAddMenu)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-green-500 text-green-600 text-[13px] font-bold active:bg-green-50 transition-colors"
+            className="w-10 h-10 rounded-xl bg-green-500 flex items-center justify-center text-white text-xl font-light active:bg-green-600 shadow-sm shrink-0"
           >
-            <span className="text-lg leading-none">+</span> 追加
+            +
           </button>
         </div>
 
@@ -514,7 +512,7 @@ export default function RecordsView() {
         <div className="space-y-3">
           {/* 食事 */}
           {filteredMeals.map((m) => (
-            <div key={m.id} className="bg-white rounded-3xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+            <div key={m.id} className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100">
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1.5">
@@ -554,7 +552,7 @@ export default function RecordsView() {
 
           {/* 運動 */}
           {filteredExercises.map((e) => (
-            <div key={e.id} className="bg-white rounded-3xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+            <div key={e.id} className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1.5">
@@ -590,7 +588,7 @@ export default function RecordsView() {
 
           {/* 体重 */}
           {filter === "all" && weights.map((w) => (
-            <div key={w.id} className="bg-white rounded-3xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+            <div key={w.id} className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <span className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-sm">⚖️</span>
@@ -753,8 +751,12 @@ function EditModal({
   const inputClass2 = inputClass;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl p-5 mx-4 w-full max-w-sm shadow-xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/30" onClick={onClose}>
+      <div
+        className="bg-white rounded-t-3xl p-5 pb-[max(env(safe-area-inset-bottom,20px),20px)] w-full max-h-[85vh] overflow-y-auto animate-slideUp"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
         <h2 className="text-base font-bold mb-4">
           {target.type === "meal"
             ? "食事を編集"
@@ -848,14 +850,18 @@ function EditModal({
         </div>
 
         <div className="flex gap-3 mt-5">
-          <button onClick={onClose} className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-600 font-medium text-base">
+          <button onClick={onClose} className="flex-1 py-3.5 rounded-2xl bg-gray-100 text-gray-600 font-semibold text-[15px] active:bg-gray-200">
             キャンセル
           </button>
-          <button onClick={handleSubmit} className="flex-1 py-3 rounded-lg bg-green-500 text-white font-medium text-base active:bg-green-600">
+          <button onClick={handleSubmit} className="flex-1 py-3.5 rounded-2xl bg-green-500 text-white font-semibold text-[15px] active:bg-green-600">
             保存
           </button>
         </div>
       </div>
+      <style jsx>{`
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .animate-slideUp { animation: slideUp 0.3s ease-out; }
+      `}</style>
     </div>
   );
 }
@@ -917,8 +923,12 @@ function AddModal({
     "w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:border-green-500";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl p-5 mx-4 w-full max-w-sm shadow-xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/30" onClick={onClose}>
+      <div
+        className="bg-white rounded-t-3xl p-5 pb-[max(env(safe-area-inset-bottom,20px),20px)] w-full max-h-[85vh] overflow-y-auto animate-slideUp2"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
         <h2 className="text-base font-bold mb-4">
           {type === "meal" ? "食事を追加" : type === "exercise" ? "運動を追加" : "体重を記録"}
         </h2>
@@ -1012,14 +1022,18 @@ function AddModal({
         </div>
 
         <div className="flex gap-3 mt-5">
-          <button onClick={onClose} className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-600 font-medium text-base">
+          <button onClick={onClose} className="flex-1 py-3.5 rounded-2xl bg-gray-100 text-gray-600 font-semibold text-[15px] active:bg-gray-200">
             キャンセル
           </button>
-          <button onClick={handleSubmit} className="flex-1 py-3 rounded-lg bg-green-500 text-white font-medium text-base active:bg-green-600">
+          <button onClick={handleSubmit} className="flex-1 py-3.5 rounded-2xl bg-green-500 text-white font-semibold text-[15px] active:bg-green-600">
             追加
           </button>
         </div>
       </div>
+      <style jsx>{`
+        @keyframes slideUp2 { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .animate-slideUp2 { animation: slideUp2 0.3s ease-out; }
+      `}</style>
     </div>
   );
 }
