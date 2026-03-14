@@ -80,7 +80,7 @@ export default function Home() {
 
       {/* モダンタブバー */}
       <nav
-        className="flex-shrink-0 relative bg-white/80 backdrop-blur-xl border-t border-gray-100/50 flex pb-[env(safe-area-inset-bottom,0px)]"
+        className="flex-shrink-0 relative bg-white/80 backdrop-blur-xl border-t border-gray-100/50 flex pb-[max(env(safe-area-inset-bottom,0px),8px)]"
       >
 {/* no indicator */}
         {tabs.map((tab) => (
@@ -88,7 +88,7 @@ export default function Home() {
             key={tab.key}
             data-tab={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 pt-2 pb-1.5 flex flex-col items-center gap-0.5 transition-all duration-300 ${
+            className={`flex-1 pt-2.5 pb-2 flex flex-col items-center gap-0.5 transition-all duration-300 ${
               activeTab === tab.key
                 ? "text-green-600"
                 : "text-gray-400 active:text-gray-500"
