@@ -639,56 +639,8 @@ export default function RecordsView({ refreshKey }: { refreshKey?: number }) {
           </button>
         </div>
 
-        {/* 記録一覧 */}
-        <div className="space-y-3.5">
-          {/* 食事・運動（同グループ） */}
-          {(filteredMeals.length > 0 || filteredExercises.length > 0) && (
-            <div className="space-y-2">
-              {filteredMeals.map((m) => (
-                <SwipeableCard key={m.id} onDelete={() => handleDelete("meal", m.id)}>
-                  <div className="transition-opacity" onClick={() => setEditTarget({ type: "meal", data: { ...m } })}>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M3.105 2.289a.75.75 0 00-.826.95l1.414 4.925A1.5 1.5 0 005.135 9.25h.757l-.642 6.77a.75.75 0 001.493.142L7.5 9.25h.322a1.5 1.5 0 001.442-1.086l1.414-4.925a.75.75 0 00-.826-.95 27.11 27.11 0 00-6.747 0zM13.5 2.5a.75.75 0 00-1.5 0v5.846a1.5 1.5 0 001.122 1.451L13.5 17a.75.75 0 001.5 0V9.797a1.5 1.5 0 001.122-1.451V2.5a.75.75 0 00-1.5 0v4.5h-.622V2.5z" /></svg>
-                      </span>
-                      <span className="text-[11px] font-semibold text-green-700">
-                        {MEAL_TYPE_LABEL[m.meal_type] || m.meal_type}
-                      </span>
-                    </div>
-                    <div className="text-[15px] font-semibold text-gray-900 mb-1.5 leading-snug">
-                      {m.description}
-                    </div>
-                    <div className="flex gap-3 text-[12px]">
-                      <span className="font-bold text-green-600">{m.calories} kcal</span>
-                      <span className="text-gray-500">P:{m.protein || 0}g</span>
-                      <span className="text-gray-500">F:{m.fat || 0}g</span>
-                      <span className="text-gray-500">C:{m.carbs || 0}g</span>
-                    </div>
-                  </div>
-                </SwipeableCard>
-              ))}
-              {filteredExercises.map((e) => (
-                <SwipeableCard key={e.id} onDelete={() => handleDelete("exercise", e.id)}>
-                  <div className="transition-opacity" onClick={() => setEditTarget({ type: "exercise", data: { ...e } })}>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M6.75 2.5A1.25 1.25 0 108 3.75 1.25 1.25 0 006.75 2.5zM3.5 7.75a.75.75 0 01.75-.75h2.5a.75.75 0 01.624.334L8.68 9.312l1.57-1.57a.75.75 0 011.06 0l2.5 2.5a.75.75 0 11-1.06 1.06L10.5 9.06l-1.72 1.72a.75.75 0 01-1.156-.176L6.036 8.5H4.25a.75.75 0 01-.75-.75zM2.75 12a.75.75 0 000 1.5h3.5l1.898 2.848a.75.75 0 001.254-.832L7.25 12H2.75zm8 0a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5z" /></svg>
-                      </span>
-                      <span className="text-[11px] font-semibold text-orange-600">運動</span>
-                    </div>
-                    <div className="text-[15px] font-semibold text-gray-900 mb-1.5 leading-snug">
-                      {e.description}
-                    </div>
-                    <div className="flex gap-3 text-[12px]">
-                      <span className="font-bold text-orange-600">-{e.calories_burned} kcal</span>
-                      <span className="text-gray-500">{e.duration_minutes}分</span>
-                    </div>
-                  </div>
-                </SwipeableCard>
-              ))}
-            </div>
-          )}
-
+        {/* 記録一覧（体重・食事・運動すべて同グループ） */}
+        <div className="space-y-2">
           {/* 体重 */}
           {filter === "all" && weights.map((w) => (
             <SwipeableCard key={w.id} onDelete={() => handleDelete("weight", w.id)}>
@@ -697,6 +649,52 @@ export default function RecordsView({ refreshKey }: { refreshKey?: number }) {
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10 1a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 1zM5.05 3.05a.75.75 0 011.06 0l1.062 1.06A.75.75 0 116.11 5.173L5.05 4.11a.75.75 0 010-1.06zm9.9 0a.75.75 0 010 1.06l-1.06 1.062a.75.75 0 01-1.062-1.061l1.061-1.06a.75.75 0 011.06 0zM3 8a7 7 0 1114 0A7 7 0 013 8zm4-1a.75.75 0 000 1.5h2.25V10a.75.75 0 001.5 0V8.5H13a.75.75 0 000-1.5h-2.25V5.5a.75.75 0 00-1.5 0V7H7z" clipRule="evenodd" /></svg>
                 </span>
                 <span className="text-[15px] font-semibold text-gray-900">{w.weight} kg</span>
+              </div>
+            </SwipeableCard>
+          ))}
+
+          {/* 食事 */}
+          {filteredMeals.map((m) => (
+            <SwipeableCard key={m.id} onDelete={() => handleDelete("meal", m.id)}>
+              <div className="transition-opacity" onClick={() => setEditTarget({ type: "meal", data: { ...m } })}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M3.105 2.289a.75.75 0 00-.826.95l1.414 4.925A1.5 1.5 0 005.135 9.25h.757l-.642 6.77a.75.75 0 001.493.142L7.5 9.25h.322a1.5 1.5 0 001.442-1.086l1.414-4.925a.75.75 0 00-.826-.95 27.11 27.11 0 00-6.747 0zM13.5 2.5a.75.75 0 00-1.5 0v5.846a1.5 1.5 0 001.122 1.451L13.5 17a.75.75 0 001.5 0V9.797a1.5 1.5 0 001.122-1.451V2.5a.75.75 0 00-1.5 0v4.5h-.622V2.5z" /></svg>
+                  </span>
+                  <span className="text-[11px] font-semibold text-green-700">
+                    {MEAL_TYPE_LABEL[m.meal_type] || m.meal_type}
+                  </span>
+                </div>
+                <div className="text-[15px] font-semibold text-gray-900 mb-1.5 leading-snug">
+                  {m.description}
+                </div>
+                <div className="flex gap-3 text-[12px]">
+                  <span className="font-bold text-green-600">{m.calories} kcal</span>
+                  <span className="text-gray-500">P:{m.protein || 0}g</span>
+                  <span className="text-gray-500">F:{m.fat || 0}g</span>
+                  <span className="text-gray-500">C:{m.carbs || 0}g</span>
+                </div>
+              </div>
+            </SwipeableCard>
+          ))}
+
+          {/* 運動 */}
+          {filteredExercises.map((e) => (
+            <SwipeableCard key={e.id} onDelete={() => handleDelete("exercise", e.id)}>
+              <div className="transition-opacity" onClick={() => setEditTarget({ type: "exercise", data: { ...e } })}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M6.75 2.5A1.25 1.25 0 108 3.75 1.25 1.25 0 006.75 2.5zM3.5 7.75a.75.75 0 01.75-.75h2.5a.75.75 0 01.624.334L8.68 9.312l1.57-1.57a.75.75 0 011.06 0l2.5 2.5a.75.75 0 11-1.06 1.06L10.5 9.06l-1.72 1.72a.75.75 0 01-1.156-.176L6.036 8.5H4.25a.75.75 0 01-.75-.75zM2.75 12a.75.75 0 000 1.5h3.5l1.898 2.848a.75.75 0 001.254-.832L7.25 12H2.75zm8 0a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5z" /></svg>
+                  </span>
+                  <span className="text-[11px] font-semibold text-orange-600">運動</span>
+                </div>
+                <div className="text-[15px] font-semibold text-gray-900 mb-1.5 leading-snug">
+                  {e.description}
+                </div>
+                <div className="flex gap-3 text-[12px]">
+                  <span className="font-bold text-orange-600">-{e.calories_burned} kcal</span>
+                  <span className="text-gray-500">{e.duration_minutes}分</span>
+                </div>
               </div>
             </SwipeableCard>
           ))}
