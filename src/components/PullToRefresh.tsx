@@ -70,28 +70,9 @@ export default function PullToRefresh({ onRefresh, children, className = "", sty
       {/* Pull indicator */}
       <div
         className="flex items-center justify-center overflow-hidden transition-all duration-200"
-        style={{ height: pullDistance > 0 ? pullDistance : 0 }}
+        style={{ height: pullDistance > 0 ? pullDistance : 0, opacity: refreshing ? 1 : progress }}
       >
-        {refreshing ? (
-          <LoadingSpinner size="sm" />
-        ) : (
-          <div
-            style={{
-              transform: `rotate(${progress * 360}deg)`,
-              opacity: progress,
-            }}
-            className="transition-transform duration-100"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="w-5 h-5 text-green-500"
-            >
-              <path fillRule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H4.598a.75.75 0 00-.75.75v3.634a.75.75 0 001.5 0v-2.033l.312.311a7 7 0 0011.712-3.138.75.75 0 00-1.06-.179zm-1.624-7.848a7 7 0 00-11.712 3.138.75.75 0 001.06.179 5.5 5.5 0 019.201-2.466l.312.311H10.116a.75.75 0 000 1.5h3.634a.75.75 0 00.75-.75V1.854a.75.75 0 00-1.5 0v2.033l-.312-.311z" clipRule="evenodd" />
-            </svg>
-          </div>
-        )}
+        <LoadingSpinner size="sm" />
       </div>
       {children}
     </div>

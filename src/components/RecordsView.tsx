@@ -644,32 +644,24 @@ export default function RecordsView({ refreshKey }: { refreshKey?: number }) {
           {/* 食事 */}
           {filteredMeals.map((m) => (
             <SwipeableCard key={m.id} onDelete={() => handleDelete("meal", m.id)}>
-              <div className="flex items-start justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M3.105 2.289a.75.75 0 00-.826.95l1.414 4.925A1.5 1.5 0 005.135 9.25h.757l-.642 6.77a.75.75 0 001.493.142L7.5 9.25h.322a1.5 1.5 0 001.442-1.086l1.414-4.925a.75.75 0 00-.826-.95 27.11 27.11 0 00-6.747 0zM13.5 2.5a.75.75 0 00-1.5 0v5.846a1.5 1.5 0 001.122 1.451L13.5 17a.75.75 0 001.5 0V9.797a1.5 1.5 0 001.122-1.451V2.5a.75.75 0 00-1.5 0v4.5h-.622V2.5z" /></svg>
-                    </span>
-                    <span className="text-[11px] font-semibold text-green-700">
-                      {MEAL_TYPE_LABEL[m.meal_type] || m.meal_type}
-                    </span>
-                  </div>
-                  <div className="text-[15px] font-semibold text-gray-900 mb-1.5 leading-snug">
-                    {m.description}
-                  </div>
-                  <div className="flex gap-3 text-[12px]">
-                    <span className="font-bold text-green-600">{m.calories} kcal</span>
-                    <span className="text-gray-500">P:{m.protein || 0}g</span>
-                    <span className="text-gray-500">F:{m.fat || 0}g</span>
-                    <span className="text-gray-500">C:{m.carbs || 0}g</span>
-                  </div>
+              <div className="active:opacity-70 transition-opacity" onClick={() => setEditTarget({ type: "meal", data: { ...m } })}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M3.105 2.289a.75.75 0 00-.826.95l1.414 4.925A1.5 1.5 0 005.135 9.25h.757l-.642 6.77a.75.75 0 001.493.142L7.5 9.25h.322a1.5 1.5 0 001.442-1.086l1.414-4.925a.75.75 0 00-.826-.95 27.11 27.11 0 00-6.747 0zM13.5 2.5a.75.75 0 00-1.5 0v5.846a1.5 1.5 0 001.122 1.451L13.5 17a.75.75 0 001.5 0V9.797a1.5 1.5 0 001.122-1.451V2.5a.75.75 0 00-1.5 0v4.5h-.622V2.5z" /></svg>
+                  </span>
+                  <span className="text-[11px] font-semibold text-green-700">
+                    {MEAL_TYPE_LABEL[m.meal_type] || m.meal_type}
+                  </span>
                 </div>
-                <button
-                  onClick={() => setEditTarget({ type: "meal", data: { ...m } })}
-                  className="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 border border-green-100 ml-3 shrink-0 mt-1"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4.5 h-4.5"><path d="M13.488 2.513a1.75 1.75 0 00-2.475 0L6.75 6.774a2.75 2.75 0 00-.596.892l-.848 2.047a.75.75 0 00.98.98l2.047-.848a2.75 2.75 0 00.892-.596l4.261-4.262a1.75 1.75 0 000-2.474z" /><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0114 9v2.25A2.75 2.75 0 0111.25 14h-6.5A2.75 2.75 0 012 11.25v-6.5A2.75 2.75 0 014.75 2H7a.75.75 0 010 1.5H4.75z" /></svg>
-                </button>
+                <div className="text-[15px] font-semibold text-gray-900 mb-1.5 leading-snug">
+                  {m.description}
+                </div>
+                <div className="flex gap-3 text-[12px]">
+                  <span className="font-bold text-green-600">{m.calories} kcal</span>
+                  <span className="text-gray-500">P:{m.protein || 0}g</span>
+                  <span className="text-gray-500">F:{m.fat || 0}g</span>
+                  <span className="text-gray-500">C:{m.carbs || 0}g</span>
+                </div>
               </div>
             </SwipeableCard>
           ))}
@@ -677,28 +669,20 @@ export default function RecordsView({ refreshKey }: { refreshKey?: number }) {
           {/* 運動 */}
           {filteredExercises.map((e) => (
             <SwipeableCard key={e.id} onDelete={() => handleDelete("exercise", e.id)}>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M6.75 2.5A1.25 1.25 0 108 3.75 1.25 1.25 0 006.75 2.5zM3.5 7.75a.75.75 0 01.75-.75h2.5a.75.75 0 01.624.334L8.68 9.312l1.57-1.57a.75.75 0 011.06 0l2.5 2.5a.75.75 0 11-1.06 1.06L10.5 9.06l-1.72 1.72a.75.75 0 01-1.156-.176L6.036 8.5H4.25a.75.75 0 01-.75-.75zM2.75 12a.75.75 0 000 1.5h3.5l1.898 2.848a.75.75 0 001.254-.832L7.25 12H2.75zm8 0a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5z" /></svg>
-                    </span>
-                    <span className="text-[11px] font-semibold text-orange-600">運動</span>
-                  </div>
-                  <div className="text-[15px] font-semibold text-gray-900 mb-1.5 leading-snug">
-                    {e.description}
-                  </div>
-                  <div className="flex gap-3 text-[12px]">
-                    <span className="font-bold text-orange-600">-{e.calories_burned} kcal</span>
-                    <span className="text-gray-500">{e.duration_minutes}分</span>
-                  </div>
+              <div className="active:opacity-70 transition-opacity" onClick={() => setEditTarget({ type: "exercise", data: { ...e } })}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M6.75 2.5A1.25 1.25 0 108 3.75 1.25 1.25 0 006.75 2.5zM3.5 7.75a.75.75 0 01.75-.75h2.5a.75.75 0 01.624.334L8.68 9.312l1.57-1.57a.75.75 0 011.06 0l2.5 2.5a.75.75 0 11-1.06 1.06L10.5 9.06l-1.72 1.72a.75.75 0 01-1.156-.176L6.036 8.5H4.25a.75.75 0 01-.75-.75zM2.75 12a.75.75 0 000 1.5h3.5l1.898 2.848a.75.75 0 001.254-.832L7.25 12H2.75zm8 0a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5z" /></svg>
+                  </span>
+                  <span className="text-[11px] font-semibold text-orange-600">運動</span>
                 </div>
-                <button
-                  onClick={() => setEditTarget({ type: "exercise", data: { ...e } })}
-                  className="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 border border-green-100 ml-3 shrink-0 mt-1"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4.5 h-4.5"><path d="M13.488 2.513a1.75 1.75 0 00-2.475 0L6.75 6.774a2.75 2.75 0 00-.596.892l-.848 2.047a.75.75 0 00.98.98l2.047-.848a2.75 2.75 0 00.892-.596l4.261-4.262a1.75 1.75 0 000-2.474z" /><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0114 9v2.25A2.75 2.75 0 0111.25 14h-6.5A2.75 2.75 0 012 11.25v-6.5A2.75 2.75 0 014.75 2H7a.75.75 0 010 1.5H4.75z" /></svg>
-                </button>
+                <div className="text-[15px] font-semibold text-gray-900 mb-1.5 leading-snug">
+                  {e.description}
+                </div>
+                <div className="flex gap-3 text-[12px]">
+                  <span className="font-bold text-orange-600">-{e.calories_burned} kcal</span>
+                  <span className="text-gray-500">{e.duration_minutes}分</span>
+                </div>
               </div>
             </SwipeableCard>
           ))}
@@ -706,19 +690,11 @@ export default function RecordsView({ refreshKey }: { refreshKey?: number }) {
           {/* 体重 */}
           {filter === "all" && weights.map((w) => (
             <SwipeableCard key={w.id} onDelete={() => handleDelete("weight", w.id)}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <span className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10 1a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 1zM5.05 3.05a.75.75 0 011.06 0l1.062 1.06A.75.75 0 116.11 5.173L5.05 4.11a.75.75 0 010-1.06zm9.9 0a.75.75 0 010 1.06l-1.06 1.062a.75.75 0 01-1.062-1.061l1.061-1.06a.75.75 0 011.06 0zM3 8a7 7 0 1114 0A7 7 0 013 8zm4-1a.75.75 0 000 1.5h2.25V10a.75.75 0 001.5 0V8.5H13a.75.75 0 000-1.5h-2.25V5.5a.75.75 0 00-1.5 0V7H7z" clipRule="evenodd" /></svg>
-                  </span>
-                  <span className="text-[15px] font-semibold text-gray-900">{w.weight} kg</span>
-                </div>
-                <button
-                  onClick={() => setEditTarget({ type: "weight", data: { ...w } })}
-                  className="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 border border-green-100"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4.5 h-4.5"><path d="M13.488 2.513a1.75 1.75 0 00-2.475 0L6.75 6.774a2.75 2.75 0 00-.596.892l-.848 2.047a.75.75 0 00.98.98l2.047-.848a2.75 2.75 0 00.892-.596l4.261-4.262a1.75 1.75 0 000-2.474z" /><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0114 9v2.25A2.75 2.75 0 0111.25 14h-6.5A2.75 2.75 0 012 11.25v-6.5A2.75 2.75 0 014.75 2H7a.75.75 0 010 1.5H4.75z" /></svg>
-                </button>
+              <div className="flex items-center gap-2.5 active:opacity-70 transition-opacity" onClick={() => setEditTarget({ type: "weight", data: { ...w } })}>
+                <span className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10 1a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 1zM5.05 3.05a.75.75 0 011.06 0l1.062 1.06A.75.75 0 116.11 5.173L5.05 4.11a.75.75 0 010-1.06zm9.9 0a.75.75 0 010 1.06l-1.06 1.062a.75.75 0 01-1.062-1.061l1.061-1.06a.75.75 0 011.06 0zM3 8a7 7 0 1114 0A7 7 0 013 8zm4-1a.75.75 0 000 1.5h2.25V10a.75.75 0 001.5 0V8.5H13a.75.75 0 000-1.5h-2.25V5.5a.75.75 0 00-1.5 0V7H7z" clipRule="evenodd" /></svg>
+                </span>
+                <span className="text-[15px] font-semibold text-gray-900">{w.weight} kg</span>
               </div>
             </SwipeableCard>
           ))}
@@ -746,9 +722,9 @@ export default function RecordsView({ refreshKey }: { refreshKey?: number }) {
             {!memoEditing && memoSaved && (
               <button
                 onClick={() => setMemoEditing(true)}
-                className="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center text-green-600 active:bg-green-100 border border-green-100"
+                className="text-[11px] text-gray-400 active:text-green-600"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4.5 h-4.5"><path d="M13.488 2.513a1.75 1.75 0 00-2.475 0L6.75 6.774a2.75 2.75 0 00-.596.892l-.848 2.047a.75.75 0 00.98.98l2.047-.848a2.75 2.75 0 00.892-.596l4.261-4.262a1.75 1.75 0 000-2.474z" /><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0114 9v2.25A2.75 2.75 0 0111.25 14h-6.5A2.75 2.75 0 012 11.25v-6.5A2.75 2.75 0 014.75 2H7a.75.75 0 010 1.5H4.75z" /></svg>
+                編集
               </button>
             )}
           </div>
@@ -918,6 +894,65 @@ export default function RecordsView({ refreshKey }: { refreshKey?: number }) {
   );
 }
 
+function SwipeDownModal({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const startY = useRef(0);
+  const currentY = useRef(0);
+  const dragging = useRef(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const target = e.target as HTMLElement;
+    // Don't capture swipe on inputs/selects
+    if (target.tagName === "INPUT" || target.tagName === "SELECT" || target.tagName === "TEXTAREA") return;
+    startY.current = e.touches[0].clientY;
+    currentY.current = 0;
+    dragging.current = true;
+    if (sheetRef.current) sheetRef.current.style.transition = "none";
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!dragging.current) return;
+    const diff = e.touches[0].clientY - startY.current;
+    currentY.current = Math.max(0, diff);
+    if (sheetRef.current) {
+      sheetRef.current.style.transform = `translateY(${currentY.current}px)`;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    dragging.current = false;
+    if (!sheetRef.current) return;
+    if (currentY.current > 120) {
+      sheetRef.current.style.transition = "transform 0.25s ease-out";
+      sheetRef.current.style.transform = `translateY(100%)`;
+      setTimeout(onClose, 250);
+    } else {
+      sheetRef.current.style.transition = "transform 0.3s ease-out";
+      sheetRef.current.style.transform = "translateY(0)";
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/30" onClick={onClose}>
+      <div
+        ref={sheetRef}
+        className="bg-white rounded-t-3xl p-5 pb-[max(env(safe-area-inset-bottom,20px),20px)] w-full max-h-[85vh] overflow-y-auto animate-slideUp"
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
+        {children}
+      </div>
+      <style jsx>{`
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .animate-slideUp { animation: slideUp 0.3s ease-out; }
+      `}</style>
+    </div>
+  );
+}
+
 function EditModal({
   target,
   onSave,
@@ -989,12 +1024,7 @@ function EditModal({
   const inputClass2 = inputClass;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/30" onClick={onClose}>
-      <div
-        className="bg-white rounded-t-3xl p-5 pb-[max(env(safe-area-inset-bottom,20px),20px)] w-full max-h-[85vh] overflow-y-auto animate-slideUp"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
+    <SwipeDownModal onClose={onClose}>
         <h2 className="text-base font-bold mb-4">
           {target.type === "meal"
             ? "食事を編集"
@@ -1095,12 +1125,7 @@ function EditModal({
             保存
           </button>
         </div>
-      </div>
-      <style jsx>{`
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .animate-slideUp { animation: slideUp 0.3s ease-out; }
-      `}</style>
-    </div>
+    </SwipeDownModal>
   );
 }
 
@@ -1161,12 +1186,7 @@ function AddModal({
     "w-full border border-gray-200 rounded-xl px-3 py-2.5 text-base focus:outline-none focus:border-green-500 bg-white";
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/30" onClick={onClose}>
-      <div
-        className="bg-white rounded-t-3xl p-5 pb-[max(env(safe-area-inset-bottom,20px),20px)] w-full max-h-[85vh] overflow-y-auto animate-slideUp2"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
+    <SwipeDownModal onClose={onClose}>
         <h2 className="text-base font-bold mb-4">
           {type === "meal" ? "食事を追加" : type === "exercise" ? "運動を追加" : "体重を記録"}
         </h2>
@@ -1267,11 +1287,6 @@ function AddModal({
             追加
           </button>
         </div>
-      </div>
-      <style jsx>{`
-        @keyframes slideUp2 { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .animate-slideUp2 { animation: slideUp2 0.3s ease-out; }
-      `}</style>
-    </div>
+    </SwipeDownModal>
   );
 }
