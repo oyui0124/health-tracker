@@ -15,6 +15,7 @@ import {
   AreaChart,
 } from "recharts";
 import { calculateBMR, getAge } from "@/lib/bmr";
+import LoadingSpinner from "./LoadingSpinner";
 
 /*
  * 統一デザインルール (Records / Stats 共通):
@@ -98,7 +99,7 @@ export default function StatsView({ refreshKey }: { refreshKey?: number }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="w-6 h-6 border-2 border-green-200 border-t-green-500 rounded-full animate-spin" />
+        <LoadingSpinner />
       </div>
     );
   }

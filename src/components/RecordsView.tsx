@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { calculateBMR, getAge } from "@/lib/bmr";
 import PullToRefresh from "./PullToRefresh";
+import LoadingSpinner from "./LoadingSpinner";
 
 type Meal = {
   id: string;
@@ -424,7 +425,7 @@ export default function RecordsView({ refreshKey }: { refreshKey?: number }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="w-6 h-6 border-2 border-green-200 border-t-green-500 rounded-full animate-spin" />
+        <LoadingSpinner />
       </div>
     );
   }
