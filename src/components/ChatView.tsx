@@ -352,9 +352,9 @@ export default function ChatView() {
                         {!isSaved && !isSaving && (
                           <button
                             onClick={() => dismissEntry(i, j)}
-                            className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-300 active:text-gray-500 rounded-full"
+                            className="absolute top-1.5 right-1.5 w-7 h-7 flex items-center justify-center text-gray-400 active:text-gray-600 active:bg-gray-100 rounded-full"
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M5.28 4.22a.75.75 0 00-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 101.06 1.06L8 9.06l2.72 2.72a.75.75 0 101.06-1.06L9.06 8l2.72-2.72a.75.75 0 00-1.06-1.06L8 6.94 5.28 4.22z" /></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M5.28 4.22a.75.75 0 00-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 101.06 1.06L8 9.06l2.72 2.72a.75.75 0 101.06-1.06L9.06 8l2.72-2.72a.75.75 0 00-1.06-1.06L8 6.94 5.28 4.22z" /></svg>
                           </button>
                         )}
                         <div className="flex items-center gap-2.5 px-3 py-2.5 pr-8">
@@ -386,18 +386,18 @@ export default function ChatView() {
                           )}
                         </div>
                         {!isSaved && !isSaving && (
-                          <div className="flex items-center gap-2 px-3 pb-2.5">
-                            <button
-                              onClick={() => saveEntry(i, j, entry)}
-                              className="flex-1 py-2 rounded-xl text-[13px] font-semibold text-white bg-green-500 active:bg-green-600"
-                            >
-                              記録する
-                            </button>
+                          <div className="flex items-center justify-end gap-2 px-3 pb-2.5">
                             <button
                               onClick={() => updateEntry(i, j, { _editing: !isEditing })}
-                              className="py-2 px-3.5 rounded-xl text-[13px] text-gray-500 bg-gray-100 active:bg-gray-200 font-medium"
+                              className="py-1.5 px-3 rounded-lg text-[12px] text-gray-400 active:text-gray-600 font-medium"
                             >
                               編集
+                            </button>
+                            <button
+                              onClick={() => saveEntry(i, j, entry)}
+                              className="py-1.5 px-4 rounded-lg text-[12px] font-semibold text-green-600 bg-green-50 border border-green-200 active:bg-green-100"
+                            >
+                              記録する
                             </button>
                           </div>
                         )}
