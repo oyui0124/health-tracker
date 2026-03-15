@@ -256,7 +256,7 @@ function SwipeableCard({ children, onDelete }: { children: React.ReactNode; onDe
       {/* スワイプするカード本体 */}
       <div
         ref={cardRef}
-        className="relative bg-white rounded-2xl p-4 border border-gray-200/60 shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
+        className="relative bg-white rounded-2xl p-4 border border-gray-200/60 shadow-[0_2px_12px_rgba(0,0,0,0.12)]"
         onTouchStart={(e) => handleStart(e.touches[0].clientX)}
         onTouchMove={(e) => handleMove(e.touches[0].clientX)}
         onTouchEnd={handleEnd}
@@ -720,12 +720,7 @@ export default function RecordsView({ refreshKey }: { refreshKey?: number }) {
               メモ
             </div>
             {!memoEditing && memoSaved && (
-              <button
-                onClick={() => setMemoEditing(true)}
-                className="text-[11px] text-gray-400 active:text-green-600"
-              >
-                編集
-              </button>
+              <span className="text-[10px] text-gray-300">タップで編集</span>
             )}
           </div>
           {memoEditing || !memoSaved ? (
@@ -736,6 +731,7 @@ export default function RecordsView({ refreshKey }: { refreshKey?: number }) {
                 placeholder="今日のメモ..."
                 className="w-full text-[13px] text-gray-700 bg-gray-50 rounded-xl p-3 border border-gray-200/60 resize-none focus:outline-none focus:ring-1 focus:ring-green-300"
                 rows={2}
+                autoFocus={memoEditing}
               />
               <div className="flex justify-between">
                 <div>
@@ -796,7 +792,10 @@ export default function RecordsView({ refreshKey }: { refreshKey?: number }) {
               </div>
             </div>
           ) : (
-            <div className="text-[13px] text-gray-700 leading-relaxed whitespace-pre-wrap">
+            <div
+              className="text-[13px] text-gray-700 leading-relaxed whitespace-pre-wrap active:opacity-60 transition-opacity"
+              onClick={() => setMemoEditing(true)}
+            >
               {memoSaved}
             </div>
           )}
@@ -936,7 +935,7 @@ function SwipeDownModal({ onClose, children }: { onClose: () => void; children: 
     <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/30" onClick={onClose}>
       <div
         ref={sheetRef}
-        className="bg-white rounded-t-3xl p-5 pb-[max(env(safe-area-inset-bottom,20px),20px)] w-full max-h-[70vh] overflow-y-auto animate-slideUp"
+        className="bg-white rounded-t-3xl p-5 pb-[max(env(safe-area-inset-bottom,20px),20px)] w-full max-h-[60vh] overflow-y-auto animate-slideUp"
         onClick={(e) => e.stopPropagation()}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}

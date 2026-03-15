@@ -348,7 +348,7 @@ export default function ChatView() {
                           ? "bg-green-100 border border-green-300"
                           : "bg-white border border-gray-200"
                       }`}>
-                        <div className="flex items-center gap-2.5 px-3 py-2.5">
+                        <div className="flex items-center gap-2.5 px-3 py-3">
                           <span className="text-lg">{entryIcon(entry)}</span>
                           <div className="flex-1 min-w-0">
                             <div className="text-[13px] font-medium text-gray-800 truncate">
@@ -369,35 +369,33 @@ export default function ChatView() {
                               </div>
                             )}
                           </div>
-                          {isSaved ? (
+                          {isSaved && (
                             <span className="text-[12px] font-semibold text-green-600 shrink-0">追加済み ✓</span>
-                          ) : isSaving ? (
+                          )}
+                          {isSaving && (
                             <span className="text-[12px] text-gray-400 shrink-0">保存中...</span>
-                          ) : (
-                            <div className="flex items-center gap-2 shrink-0">
-                              <button
-                                onClick={() => updateEntry(i, j, { _editing: !isEditing })}
-                                className="px-2.5 py-1.5 text-[12px] text-gray-500 active:text-blue-600 rounded-lg active:bg-blue-50"
-                              >
-                                編集
-                              </button>
-                              <button
-                                onClick={() => saveEntry(i, j, entry)}
-                                className="px-3 py-1.5 text-[13px] font-semibold text-white bg-green-500 active:bg-green-600 rounded-lg"
-                              >
-                                追加
-                              </button>
-                            </div>
                           )}
                         </div>
-                        {/* スキップリンク */}
+                        {/* アクションボタン: 横幅フルで押しやすく */}
                         {!isSaved && !isSaving && (
-                          <div className="px-3 pb-2">
+                          <div className="flex border-t border-gray-100">
                             <button
                               onClick={() => dismissEntry(i, j)}
-                              className="text-[11px] text-gray-400 active:text-gray-600"
+                              className="flex-1 py-2.5 text-[13px] text-gray-400 font-medium active:bg-gray-50 border-r border-gray-100"
                             >
                               スキップ
+                            </button>
+                            <button
+                              onClick={() => updateEntry(i, j, { _editing: !isEditing })}
+                              className="flex-1 py-2.5 text-[13px] text-gray-600 font-medium active:bg-gray-50 border-r border-gray-100"
+                            >
+                              編集
+                            </button>
+                            <button
+                              onClick={() => saveEntry(i, j, entry)}
+                              className="flex-1 py-2.5 text-[13px] text-green-600 font-semibold active:bg-green-50"
+                            >
+                              追加
                             </button>
                           </div>
                         )}
