@@ -266,7 +266,7 @@ function SwipeableCard({ children, onDelete }: { children: React.ReactNode; onDe
   );
 }
 
-export default function RecordsView() {
+export default function RecordsView({ refreshKey }: { refreshKey?: number }) {
   const [date, setDate] = useState(getLocalDate());
   const [showCalendar, setShowCalendar] = useState(false);
   const [meals, setMeals] = useState<Meal[]>([]);
@@ -308,7 +308,7 @@ export default function RecordsView() {
         setMemoEditing(false);
       })
       .catch(() => {});
-  }, [date]);
+  }, [date, refreshKey]);
 
   useEffect(() => {
     fetchRecords();
@@ -423,8 +423,8 @@ export default function RecordsView() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-400">
-        読み込み中...
+      <div className="flex items-center justify-center h-full">
+        <div className="w-6 h-6 border-2 border-green-200 border-t-green-500 rounded-full animate-spin" />
       </div>
     );
   }

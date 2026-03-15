@@ -73,7 +73,7 @@ type SummaryData = {
 
 type ChartMode = "net" | "detail";
 
-export default function StatsView() {
+export default function StatsView({ refreshKey }: { refreshKey?: number }) {
   const [data, setData] = useState<SummaryData | null>(null);
   const [range, setRange] = useState(7);
   const [loading, setLoading] = useState(true);
@@ -89,7 +89,7 @@ export default function StatsView() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [range]);
+  }, [range, refreshKey]);
 
   useEffect(() => {
     fetchData();
@@ -97,8 +97,8 @@ export default function StatsView() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-400">
-        読み込み中...
+      <div className="flex items-center justify-center h-full">
+        <div className="w-6 h-6 border-2 border-green-200 border-t-green-500 rounded-full animate-spin" />
       </div>
     );
   }
@@ -562,13 +562,21 @@ export default function StatsView() {
   );
 }
 
+function toLocalDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function buildCalendarDays(
   dailyStats: DailyStats,
   goal: Goal | null,
   mode: "calorie" | "exercise" = "calorie"
 ): { dayNum: number; status: "good" | "over" | "nodata" | "future"; label: string; blank?: boolean }[] {
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  today.setHours(23, 59, 59, 999); // 今日の終わりまで含める
+  const todayStr = toLocalDateStr(today);
 
   // 当月1日から表示
   const startDate = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -582,8 +590,8 @@ function buildCalendarDays(
   const result: { dayNum: number; status: "good" | "over" | "nodata" | "future"; label: string; blank?: boolean }[] = [];
 
   const current = new Date(startDay);
-  while (current <= today) {
-    const dateStr = current.toISOString().split("T")[0];
+  while (toLocalDateStr(current) <= todayStr) {
+    const dateStr = toLocalDateStr(current);
     const dayNum = current.getDate();
 
     if (current < startDate) {
