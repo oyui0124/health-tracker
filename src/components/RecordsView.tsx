@@ -256,7 +256,7 @@ function SwipeableCard({ children, onDelete }: { children: React.ReactNode; onDe
       {/* スワイプするカード本体 */}
       <div
         ref={cardRef}
-        className="relative bg-white rounded-2xl p-4 border border-gray-200 shadow-[inset_0_1px_4px_rgba(0,0,0,0.06)] active:bg-gray-50 transition-colors duration-150"
+        className="relative bg-white rounded-2xl p-4 border border-gray-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.08),0_4px_12px_rgba(0,0,0,0.04)] active:bg-gray-50 transition-colors duration-150"
         onTouchStart={(e) => handleStart(e.touches[0].clientX)}
         onTouchMove={(e) => handleMove(e.touches[0].clientX)}
         onTouchEnd={handleEnd}
@@ -935,7 +935,7 @@ function SwipeDownModal({ onClose, children }: { onClose: () => void; children: 
     <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/30" onClick={onClose}>
       <div
         ref={sheetRef}
-        className="bg-white rounded-t-3xl p-5 pb-[max(env(safe-area-inset-bottom,20px),20px)] w-full max-h-[60vh] overflow-y-auto animate-slideUp"
+        className="bg-white rounded-t-3xl p-5 pb-[max(env(safe-area-inset-bottom,20px),20px)] w-full max-h-[85vh] overflow-y-auto animate-slideUp"
         onClick={(e) => e.stopPropagation()}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
