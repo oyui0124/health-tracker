@@ -21,12 +21,11 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* PWA standalone mode */
-@media (display-mode: standalone) {
-  body {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-  }
+/* Prevent iOS overscroll bounce */
+html, body {
+  overscroll-behavior: none;
+  overflow: hidden;
+  height: 100%;
 }
 
 .no-scrollbar::-webkit-scrollbar {
