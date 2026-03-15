@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ChatView from "@/components/ChatView";
 import RecordsView from "@/components/RecordsView";
 import StatsView from "@/components/StatsView";
@@ -43,6 +43,21 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("chat");
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const threshold = 100;
+    const handleResize = () => {
+      const keyboardOpen = window.innerHeight - vv.height > threshold;
+      setKeyboardVisible(keyboardOpen);
+    };
+
+    vv.addEventListener("resize", handleResize);
+    return () => vv.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab);
@@ -88,7 +103,7 @@ export default function Home() {
 
       {/* モダンタブバー */}
       <nav
-        className="flex-shrink-0 relative bg-white/80 backdrop-blur-xl border-t border-gray-100/50 flex pb-[max(env(safe-area-inset-bottom,0px),16px)]"
+        className={`flex-shrink-0 relative bg-white/80 backdrop-blur-xl border-t border-gray-100/50 flex pb-[max(env(safe-area-inset-bottom,0px),16px)] transition-all duration-200 ${keyboardVisible ? "hidden" : ""}`}
       >
 {/* no indicator */}
         {tabs.map((tab) => (
