@@ -256,7 +256,7 @@ function SwipeableCard({ children, onDelete }: { children: React.ReactNode; onDe
       {/* スワイプするカード本体 */}
       <div
         ref={cardRef}
-        className="relative bg-white rounded-2xl p-4 shadow-sm border border-gray-200/60"
+        className="relative bg-white rounded-2xl p-4 border border-gray-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
         onTouchStart={(e) => handleStart(e.touches[0].clientX)}
         onTouchMove={(e) => handleMove(e.touches[0].clientX)}
         onTouchEnd={handleEnd}
@@ -1019,7 +1019,7 @@ function EditModal({
   };
 
   const inputClass =
-    "w-full border border-gray-200 rounded-xl px-3 py-2.5 text-base focus:outline-none focus:border-green-500 bg-white";
+    "w-full box-border border border-gray-200 rounded-xl px-3 py-2.5 text-base focus:outline-none focus:border-green-500 bg-white appearance-none";
 
   const inputClass2 = inputClass;
 
@@ -1183,7 +1183,7 @@ function AddModal({
   };
 
   const inputClass =
-    "w-full border border-gray-200 rounded-xl px-3 py-2.5 text-base focus:outline-none focus:border-green-500 bg-white";
+    "w-full box-border border border-gray-200 rounded-xl px-3 py-2.5 text-base focus:outline-none focus:border-green-500 bg-white appearance-none";
 
   return (
     <SwipeDownModal onClose={onClose}>

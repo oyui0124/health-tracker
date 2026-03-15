@@ -2,13 +2,13 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Health Tracker",
+  title: "bal.",
   description: "毎日の食事・体重・運動を記録して健康管理",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Health Tracker",
+    title: "bal.",
   },
 };
 

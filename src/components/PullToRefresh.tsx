@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, useCallback } from "react";
-import LoadingSpinner from "./LoadingSpinner";
 
 type Props = {
   onRefresh: () => Promise<void> | void;
@@ -70,9 +69,15 @@ export default function PullToRefresh({ onRefresh, children, className = "", sty
       {/* Pull indicator */}
       <div
         className="flex items-center justify-center overflow-hidden transition-all duration-200"
-        style={{ height: pullDistance > 0 ? pullDistance : 0, opacity: refreshing ? 1 : progress }}
+        style={{ height: pullDistance > 0 ? pullDistance : 0 }}
       >
-        <LoadingSpinner size="sm" />
+        <div
+          className={`w-5 h-5 rounded-full border-2 border-gray-200 border-t-green-500 ${refreshing ? "animate-spin" : ""}`}
+          style={{
+            opacity: refreshing ? 1 : progress,
+            transform: refreshing ? undefined : `rotate(${progress * 270}deg)`,
+          }}
+        />
       </div>
       {children}
     </div>

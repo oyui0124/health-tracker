@@ -1,11 +1,11 @@
 {
-  "name": "Health Tracker",
-  "short_name": "Health",
+  "name": "bal.",
+  "short_name": "bal.",
   "description": "毎日の食事・体重・運動を記録して健康管理",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f8faf8",
-  "theme_color": "#22c55e",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "icons": [
     {
       "src": "/icon-192.png",

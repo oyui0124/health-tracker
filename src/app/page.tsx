@@ -55,7 +55,7 @@ export default function Home() {
     <div className="h-dvh flex flex-col bg-[var(--background)] overflow-hidden overscroll-none">
       {/* ヘッダー */}
       <header className="flex-shrink-0 bg-white backdrop-blur-xl border-b border-gray-100 px-4 py-3 pt-[max(env(safe-area-inset-top,0px),12px)] flex items-center justify-between">
-        <h1 className="text-lg font-bold text-green-600">Health Tracker</h1>
+        <h1 className="text-[17px] font-extrabold tracking-tight text-gray-900">bal<span className="text-green-500">.</span></h1>
         <button
           onClick={() => setShowGoalModal(true)}
           className="text-sm text-gray-500 active:text-green-600 transition-colors"
