@@ -640,9 +640,9 @@ export default function RecordsView({ refreshKey }: { refreshKey?: number }) {
         </div>
 
         {/* 記録一覧 */}
-        <div className="space-y-4">
-          {/* 食事 */}
-          {filteredMeals.length > 0 && (
+        <div className="space-y-3.5">
+          {/* 食事・運動（同グループ） */}
+          {(filteredMeals.length > 0 || filteredExercises.length > 0) && (
             <div className="space-y-2">
               {filteredMeals.map((m) => (
                 <SwipeableCard key={m.id} onDelete={() => handleDelete("meal", m.id)}>
@@ -667,12 +667,6 @@ export default function RecordsView({ refreshKey }: { refreshKey?: number }) {
                   </div>
                 </SwipeableCard>
               ))}
-            </div>
-          )}
-
-          {/* 運動 */}
-          {filteredExercises.length > 0 && (
-            <div className="space-y-2">
               {filteredExercises.map((e) => (
                 <SwipeableCard key={e.id} onDelete={() => handleDelete("exercise", e.id)}>
                   <div className="transition-opacity" onClick={() => setEditTarget({ type: "exercise", data: { ...e } })}>
@@ -696,20 +690,16 @@ export default function RecordsView({ refreshKey }: { refreshKey?: number }) {
           )}
 
           {/* 体重 */}
-          {filter === "all" && weights.length > 0 && (
-            <div className="space-y-2">
-              {weights.map((w) => (
-                <SwipeableCard key={w.id} onDelete={() => handleDelete("weight", w.id)}>
-                  <div className="flex items-center gap-2.5 transition-opacity" onClick={() => setEditTarget({ type: "weight", data: { ...w } })}>
-                    <span className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10 1a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 1zM5.05 3.05a.75.75 0 011.06 0l1.062 1.06A.75.75 0 116.11 5.173L5.05 4.11a.75.75 0 010-1.06zm9.9 0a.75.75 0 010 1.06l-1.06 1.062a.75.75 0 01-1.062-1.061l1.061-1.06a.75.75 0 011.06 0zM3 8a7 7 0 1114 0A7 7 0 013 8zm4-1a.75.75 0 000 1.5h2.25V10a.75.75 0 001.5 0V8.5H13a.75.75 0 000-1.5h-2.25V5.5a.75.75 0 00-1.5 0V7H7z" clipRule="evenodd" /></svg>
-                    </span>
-                    <span className="text-[15px] font-semibold text-gray-900">{w.weight} kg</span>
-                  </div>
-                </SwipeableCard>
-              ))}
-            </div>
-          )}
+          {filter === "all" && weights.map((w) => (
+            <SwipeableCard key={w.id} onDelete={() => handleDelete("weight", w.id)}>
+              <div className="flex items-center gap-2.5 transition-opacity" onClick={() => setEditTarget({ type: "weight", data: { ...w } })}>
+                <span className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10 1a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 1zM5.05 3.05a.75.75 0 011.06 0l1.062 1.06A.75.75 0 116.11 5.173L5.05 4.11a.75.75 0 010-1.06zm9.9 0a.75.75 0 010 1.06l-1.06 1.062a.75.75 0 01-1.062-1.061l1.061-1.06a.75.75 0 011.06 0zM3 8a7 7 0 1114 0A7 7 0 013 8zm4-1a.75.75 0 000 1.5h2.25V10a.75.75 0 001.5 0V8.5H13a.75.75 0 000-1.5h-2.25V5.5a.75.75 0 00-1.5 0V7H7z" clipRule="evenodd" /></svg>
+                </span>
+                <span className="text-[15px] font-semibold text-gray-900">{w.weight} kg</span>
+              </div>
+            </SwipeableCard>
+          ))}
 
           {/* 空の場合 */}
           {filteredMeals.length === 0 && filteredExercises.length === 0 && (filter !== "all" || weights.length === 0) && (
