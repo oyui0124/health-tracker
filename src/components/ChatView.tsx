@@ -343,19 +343,15 @@ export default function ChatView() {
                     }
 
                     return (
-                      <div key={j} className={`w-full rounded-xl transition-all ${
-                        isSaved
-                          ? "bg-green-100 border border-green-300"
-                          : "bg-white border border-gray-200"
-                      }`}>
-                        <div className="flex items-center gap-2.5 px-3 py-3">
-                          <span className="text-lg">{entryIcon(entry)}</span>
+                      <div key={j} className="w-full transition-all">
+                        <div className="flex items-center gap-2.5 mb-2">
+                          <span className="text-base">{entryIcon(entry)}</span>
                           <div className="flex-1 min-w-0">
                             <div className="text-[13px] font-medium text-gray-800 truncate">
                               {entryLabel(entry)}
                             </div>
                             {entry.type === "meal" && (entry.protein != null || entry.calories != null) && (
-                              <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-gray-400 mt-1">
+                              <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-gray-400 mt-0.5">
                                 {entry.calories != null && <span className="font-medium text-gray-500">{entry.calories}kcal</span>}
                                 {entry.protein != null && <span>P:{entry.protein}g</span>}
                                 {entry.fat != null && <span>F:{entry.fat}g</span>}
@@ -363,39 +359,36 @@ export default function ChatView() {
                               </div>
                             )}
                             {entry.type === "exercise" && entry.calories_burned != null && (
-                              <div className="text-[11px] text-gray-400 mt-1">
+                              <div className="text-[11px] text-gray-400 mt-0.5">
                                 {entry.duration_minutes && <span>{entry.duration_minutes}分</span>}
                                 <span className="ml-1.5">-{entry.calories_burned}kcal</span>
                               </div>
                             )}
                           </div>
-                          {isSaved && (
-                            <span className="text-[12px] font-semibold text-green-600 shrink-0">追加済み ✓</span>
-                          )}
-                          {isSaving && (
-                            <span className="text-[12px] text-gray-400 shrink-0">保存中...</span>
-                          )}
                         </div>
-                        {/* アクションボタン: 横幅フルで押しやすく */}
-                        {!isSaved && !isSaving && (
-                          <div className="flex border-t border-gray-100">
+                        {isSaved ? (
+                          <div className="text-[12px] font-semibold text-green-600">追加済み ✓</div>
+                        ) : isSaving ? (
+                          <div className="text-[12px] text-gray-400">保存中...</div>
+                        ) : (
+                          <div className="flex items-center gap-2">
                             <button
-                              onClick={() => dismissEntry(i, j)}
-                              className="flex-1 py-2.5 text-[13px] text-gray-400 font-medium active:bg-gray-50 border-r border-gray-100"
+                              onClick={() => saveEntry(i, j, entry)}
+                              className="flex-1 py-2 rounded-xl text-[13px] font-semibold text-white bg-green-500 active:bg-green-600"
                             >
-                              スキップ
+                              記録する
                             </button>
                             <button
                               onClick={() => updateEntry(i, j, { _editing: !isEditing })}
-                              className="flex-1 py-2.5 text-[13px] text-gray-600 font-medium active:bg-gray-50 border-r border-gray-100"
+                              className="py-2 px-3 rounded-xl text-[13px] text-gray-500 bg-gray-100 active:bg-gray-200 font-medium"
                             >
                               編集
                             </button>
                             <button
-                              onClick={() => saveEntry(i, j, entry)}
-                              className="flex-1 py-2.5 text-[13px] text-green-600 font-semibold active:bg-green-50"
+                              onClick={() => dismissEntry(i, j)}
+                              className="py-2 px-2 text-[12px] text-gray-400 active:text-gray-600"
                             >
-                              追加
+                              ✕
                             </button>
                           </div>
                         )}
