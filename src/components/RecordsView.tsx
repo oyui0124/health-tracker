@@ -256,7 +256,7 @@ function SwipeableCard({ children, onDelete }: { children: React.ReactNode; onDe
       {/* スワイプするカード本体 */}
       <div
         ref={cardRef}
-        className="relative bg-white rounded-2xl p-4 shadow-md active:shadow-sm active:scale-[0.98] transition-all duration-150"
+        className="relative bg-white rounded-2xl p-4 border border-gray-200 shadow-[inset_0_1px_4px_rgba(0,0,0,0.06)] active:bg-gray-50 transition-colors duration-150"
         onTouchStart={(e) => handleStart(e.touches[0].clientX)}
         onTouchMove={(e) => handleMove(e.touches[0].clientX)}
         onTouchEnd={handleEnd}

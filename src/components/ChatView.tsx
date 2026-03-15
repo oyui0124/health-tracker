@@ -324,7 +324,7 @@ export default function ChatView() {
             {/* 記録追加の確認カード */}
             {msg.pendingEntries && msg.pendingEntries.length > 0 && (
               <div className="flex justify-start mt-2">
-                <div className="max-w-[85%] rounded-2xl border border-green-200 bg-green-50 p-3 space-y-2">
+                <div className="w-full rounded-2xl border border-green-200 bg-green-50 p-3 space-y-2">
                   <div className="text-[12px] font-semibold text-green-700">記録に追加しますか？</div>
                   {msg.pendingEntries.map((entry, j) => {
                     const isSaved = entry._saved;
@@ -343,9 +343,22 @@ export default function ChatView() {
                     }
 
                     return (
-                      <div key={j} className="w-full transition-all">
-                        <div className="flex items-center gap-2.5 mb-2">
-                          <span className="text-base">{entryIcon(entry)}</span>
+                      <div key={j} className={`w-full rounded-xl relative transition-all ${
+                        isSaved
+                          ? "bg-green-100 border border-green-300"
+                          : "bg-white border border-gray-200"
+                      }`}>
+                        {/* ✕ 右上 */}
+                        {!isSaved && !isSaving && (
+                          <button
+                            onClick={() => dismissEntry(i, j)}
+                            className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-300 active:text-gray-500 rounded-full"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M5.28 4.22a.75.75 0 00-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 101.06 1.06L8 9.06l2.72 2.72a.75.75 0 101.06-1.06L9.06 8l2.72-2.72a.75.75 0 00-1.06-1.06L8 6.94 5.28 4.22z" /></svg>
+                          </button>
+                        )}
+                        <div className="flex items-center gap-2.5 px-3 py-2.5 pr-8">
+                          <span className="text-lg">{entryIcon(entry)}</span>
                           <div className="flex-1 min-w-0">
                             <div className="text-[13px] font-medium text-gray-800 truncate">
                               {entryLabel(entry)}
@@ -365,13 +378,15 @@ export default function ChatView() {
                               </div>
                             )}
                           </div>
+                          {isSaved && (
+                            <span className="text-[12px] font-semibold text-green-600 shrink-0">追加済み ✓</span>
+                          )}
+                          {isSaving && (
+                            <span className="text-[12px] text-gray-400 shrink-0">保存中...</span>
+                          )}
                         </div>
-                        {isSaved ? (
-                          <div className="text-[12px] font-semibold text-green-600">追加済み ✓</div>
-                        ) : isSaving ? (
-                          <div className="text-[12px] text-gray-400">保存中...</div>
-                        ) : (
-                          <div className="flex items-center gap-2">
+                        {!isSaved && !isSaving && (
+                          <div className="flex items-center gap-2 px-3 pb-2.5">
                             <button
                               onClick={() => saveEntry(i, j, entry)}
                               className="flex-1 py-2 rounded-xl text-[13px] font-semibold text-white bg-green-500 active:bg-green-600"
@@ -380,15 +395,9 @@ export default function ChatView() {
                             </button>
                             <button
                               onClick={() => updateEntry(i, j, { _editing: !isEditing })}
-                              className="py-2 px-3 rounded-xl text-[13px] text-gray-500 bg-gray-100 active:bg-gray-200 font-medium"
+                              className="py-2 px-3.5 rounded-xl text-[13px] text-gray-500 bg-gray-100 active:bg-gray-200 font-medium"
                             >
                               編集
-                            </button>
-                            <button
-                              onClick={() => dismissEntry(i, j)}
-                              className="py-2 px-2 text-[12px] text-gray-400 active:text-gray-600"
-                            >
-                              ✕
                             </button>
                           </div>
                         )}
